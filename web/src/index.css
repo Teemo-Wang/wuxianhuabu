@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 主题色变量：默认值，运行时可通过主题设置面板覆盖并持久化到 localStorage/后端 */
+:root {
+  --color-canvas-bg: #0f1115;
+  --color-panel-bg: #17191f;
+  --color-panel-border: #2a2d36;
+  --color-accent: #6366f1;
+  --color-accent-fg: #ffffff;
+  --color-node-bg: #1c1f26;
+  --color-node-border: #33363f;
+  --color-text-primary: #e7e9ee;
+  --color-text-secondary: #9aa0ac;
+  --radius-node: 12px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: var(--color-canvas-bg);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, sans-serif;
+  overflow: hidden;
+}
+
+/* React Flow 画布背景跟随主题变量 */
+.react-flow {
+  background-color: var(--color-canvas-bg);
+
+  /* 覆盖 React Flow 默认的浅色主题变量，避免深色背景下 Controls/MiniMap 等控件
+     使用白底+浅色图标导致缩放控件看不清的问题 */
+  --xy-controls-button-background-color: var(--color-panel-bg);
+  --xy-controls-button-background-color-hover: var(--color-accent);
+  --xy-controls-button-color: var(--color-text-primary);
+  --xy-controls-button-color-hover: var(--color-accent-fg);
+  --xy-controls-button-border-color: var(--color-panel-border);
+  --xy-minimap-background-color: var(--color-panel-bg);
+  --xy-minimap-mask-background-color: rgba(0, 0, 0, 0.45);
+  --xy-minimap-node-background-color: var(--color-node-bg);
+  --xy-minimap-node-stroke-color: var(--color-node-border);
+  --xy-edge-stroke-default: var(--color-panel-border);
+  --xy-edge-stroke-selected-default: var(--color-accent);
+  --xy-handle-background-color-default: var(--color-accent);
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+/* Controls 容器本身也需要边框，避免深色背景下和画布融为一体 */
+.react-flow__controls {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-panel-border);
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+/* 自定义滚动条，弱化视觉噪音 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-panel-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
