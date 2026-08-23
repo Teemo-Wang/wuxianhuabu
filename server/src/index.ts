@@ -8,6 +8,8 @@ import { modelsRouter } from "./routes/models.js";
 import { themeRouter } from "./routes/theme.js";
 import { uploadRouter } from "./routes/upload.js";
 import { generateRouter } from "./routes/generate.js";
+import { comfyWorkflowRouter } from "./routes/comfyWorkflow.js";
+import { skillsRouter } from "./routes/skills.js";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 8787);
@@ -25,6 +27,8 @@ app.use("/api/models", modelsRouter);
 app.use("/api/theme", themeRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/generate", generateRouter);
+app.use("/api/comfy-workflow", comfyWorkflowRouter);
+app.use("/api/skills", skillsRouter);
 
 // 统一错误处理，避免未捕获异常导致进程退出
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

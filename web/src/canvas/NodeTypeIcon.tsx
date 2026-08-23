@@ -58,11 +58,35 @@ function AudioGlyph({ className }: { className?: string }) {
   );
 }
 
+function ComfyWorkflowGlyph({ className }: { className?: string }) {
+  return (
+    <svg {...commonProps} className={className}>
+      <rect x="3" y="4" width="7" height="6" rx="1.5" />
+      <rect x="3" y="14" width="7" height="6" rx="1.5" />
+      <rect x="14" y="9" width="7" height="6" rx="1.5" />
+      <path d="M10 7h2a2 2 0 0 1 2 2v0" />
+      <path d="M10 17h2a2 2 0 0 0 2-2v0" />
+    </svg>
+  );
+}
+
+function SkillGlyph({ className }: { className?: string }) {
+  return (
+    <svg {...commonProps} className={className}>
+      <path d="M7 4h8l3 4-3 4H7l-3-4z" />
+      <line x1="9" y1="12" x2="9" y2="20" />
+      <line x1="7" y1="20" x2="11" y2="20" />
+    </svg>
+  );
+}
+
 const GLYPHS: Record<NodeMenuType, typeof TextGlyph> = {
   text: TextGlyph,
   image: ImageGlyph,
   video: VideoGlyph,
   audio: AudioGlyph,
+  "comfy-workflow": ComfyWorkflowGlyph,
+  skill: SkillGlyph,
 };
 
 export function NodeTypeIcon({ type, className }: Props) {

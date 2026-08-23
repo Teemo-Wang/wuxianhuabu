@@ -4,9 +4,27 @@
 /** 画布节点通用结构，具体内容由 data 字段区分类型 */
 export interface CanvasNodeData {
   id: string;
-  type: "text" | "image" | "video" | "audio" | "generating";
+  type: "text" | "image" | "video" | "audio" | "comfy-workflow" | "skill" | "generating";
   position: { x: number; y: number };
   data: Record<string, unknown>;
+}
+
+/** ComfyUI 工作流节点的单个输入/输出槎位（与前端 types.ts 保持一致） */
+export interface ComfyWorkflowIOSlot {
+  id: string;
+  label: string;
+  nodeId: string;
+  field?: string;
+  type: "text" | "image";
+}
+
+/** Skill 库条目：预设好的一段 Markdown 提示词模板 */
+export interface SkillEntry {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** 画布连线 */

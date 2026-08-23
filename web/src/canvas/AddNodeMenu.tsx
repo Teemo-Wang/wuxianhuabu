@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { NodeTypeIcon } from "./NodeTypeIcon";
 
-export type NodeMenuType = "text" | "image" | "video" | "audio";
+export type NodeMenuType = "text" | "image" | "video" | "audio" | "comfy-workflow" | "skill";
 
 export interface AddNodeMenuState {
   screenX: number;
@@ -20,11 +20,18 @@ interface Props {
   onClose: () => void;
 }
 
-const ITEMS: Array<{ type: NodeMenuType; label: string; desc: string }> = [
+// PART1：基础素材节点
+const PART1_ITEMS: Array<{ type: NodeMenuType; label: string; desc: string }> = [
   { type: "text", label: "文本", desc: "提示词 / 脚本 / 说明" },
   { type: "image", label: "图片", desc: "宣传图、海报、封面" },
   { type: "video", label: "视频", desc: "上传视频素材或生成结果占位" },
   { type: "audio", label: "音频", desc: "上传音频素材或生成结果占位" },
+];
+
+// PART2：进阶节点，接入 ComfyUI 工作流 / 预设 Skill 提示词模板
+const PART2_ITEMS: Array<{ type: NodeMenuType; label: string; desc: string }> = [
+  { type: "comfy-workflow", label: "ComfyUI 工作流", desc: "绑定一份 workflow，按输入输出槎位显示连接点" },
+  { type: "skill", label: "Skill", desc: "预设好的一整套提示词模板（.md）" },
 ];
 
 const MENU_WIDTH = 260;
@@ -58,7 +65,28 @@ export function AddNodeMenu({ state, onSelect, onClose }: Props) {
       >
         <div className="px-2 pb-1.5 pt-1 text-xs font-medium text-text-secondary">添加节点</div>
         <div className="flex flex-col gap-1">
-          {ITEMS.map((item) => (
+          {PART1_ITEMS.map((item) => (
+            <button
+              key={item.type}
+              type="button"
+              className="group flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition-colors hover:bg-accent/10"
+              onClick={() => onSelect(item.type)}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-panel-border bg-canvas text-text-secondary transition-colors group-hover:border-accent group-hover:text-accent">
+                <NodeTypeIcon type={item.type} className="h-[18px] w-[18px]" />
+              </span>
+              <span className="min-w-0">
+                <div className="text-sm text-text-primary">{item.label}</div>
+                <div className="truncate text-[11px] text-text-secondary">{item.desc}</div>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="my-1.5 border-t border-panel-border" />
+
+        <div className="flex flex-col gap-1">
+          {PART2_ITEMS.map((item) => (
             <button
               key={item.type}
               type="button"

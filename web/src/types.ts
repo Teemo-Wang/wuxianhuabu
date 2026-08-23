@@ -101,4 +101,60 @@ export interface GeneratingNodeData {
   [key: string]: unknown;
 }
 
-export type AppNodeData = TextNodeData | ImageNodeData | VideoNodeData | AudioNodeData | GeneratingNodeData;
+/** ComfyUI 工作流节点的单个输入/输出槎位 */
+export interface ComfyWorkflowIOSlot {
+  /** 槎位唯一 id，同时作为该节点上 Handle 的 id */
+  id: string;
+  /** 显示名称 */
+  label: string;
+  /** workflow JSON 中对应的节点 ID */
+  nodeId: string;
+  /** 输入槎位需要：该节点 inputs 下要写入的字段名；输出槎位不需要 */
+  field?: string;
+  /** 数据类型，决定这个槎位怎么取值/怎么展示 */
+  type: "text" | "image";
+}
+
+/** ComfyUI 工作流节点：把一份 workflow 直接绑定到画布节点上，
+ * 按配置好的输入/输出槎位在节点两侧渲染对应数量的 Handle */
+export interface ComfyWorkflowNodeData {
+  kind: "comfy-workflow";
+  name: string;
+  baseUrl: string;
+  workflow: Record<string, any>;
+  inputs: ComfyWorkflowIOSlot[];
+  outputs: ComfyWorkflowIOSlot[];
+  status: "idle" | "running" | "error";
+  errorMessage?: string;
+  /** 每个输出槎位最近一次的结果地址，key 为槎位 id */
+  results: Record<string, string>;
+  [key: string]: unknown;
+}
+
+/** Skill 节点：承载一段预设好的 Markdown 提示词模板（文生图模板/图片反推/图转视频提示词等） */
+export interface SkillNodeData {
+  kind: "skill";
+  /** 关联的 skill 库条目 id，null 表示这是一份未保存到库的临时内容 */
+  skillId: string | null;
+  name: string;
+  content: string;
+  [key: string]: unknown;
+}
+
+/** Skill 库条目（后端 data/skills.json 持久化） */
+export interface SkillEntry {
+  id: string;
+  name: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AppNodeData =
+  | TextNodeData
+  | ImageNodeData
+  | VideoNodeData
+  | AudioNodeData
+  | ComfyWorkflowNodeData
+  | SkillNodeData
+  | GeneratingNodeData;

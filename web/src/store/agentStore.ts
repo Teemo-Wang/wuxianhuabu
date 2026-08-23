@@ -16,18 +16,19 @@ export function getNodeLabel(node: AppNode): string {
   }
   if (data.kind === "video") return "视频";
   if (data.kind === "audio") return "音频";
+  if (data.kind === "skill") return (data as any).name || "Skill";
+  if (data.kind === "comfy-workflow") return (data as any).name || "ComfyUI 工作流";
   return "生成中";
 }
 
 interface AgentState {
-  open: boolean;
   referenceIds: string[];
   prompt: string;
   generating: boolean;
   errorMessage: string | null;
 
-  openPanel: (referenceIds?: string[]) => void;
-  closePanel: () => void;
+  /** 与画布当前选中的节点集合同步引用列表（选中节点变化时调用），不会清空用户手动追加的引用之外的历史输入 */
+  syncSelection: (selectedIds: string[]) => void;
   addReference: (id: string) => void;
   removeReference: (id: string) => void;
   setPrompt: (prompt: string) => void;
@@ -35,14 +36,20 @@ interface AgentState {
 }
 
 export const useAgentStore = create<AgentState>((set, get) => ({
-  open: false,
   referenceIds: [],
   prompt: "",
   generating: false,
   errorMessage: null,
 
-  openPanel: (referenceIds = []) => set({ open: true, referenceIds, errorMessage: null }),
-  closePanel: () => set({ open: false }),
+  syncSelection: (selectedIds) => {
+    // 直接以当前选中集合覆盖引用列表：这样切换选区时输入条总是聚焦在“当前选中的节点”上，
+    // 用户仍可以在条上通过「+ 添加引用」追加更多非选中节点
+    const current = get().referenceIds;
+    const same =
+      current.length === selectedIds.length && current.every((id) => selectedIds.includes(id));
+    if (same) return;
+    set({ referenceIds: selectedIds, errorMessage: null });
+  },
 
   addReference: (id) => {
     if (get().referenceIds.includes(id)) return;
@@ -65,9 +72,13 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       .filter((n) => (n.data as AppNodeData).kind === "image")
       .map((n) => (n.data as ImageNodeData).url);
 
+    // 文本节点和 Skill 节点都贡献纯文本内容拼接进最终 prompt
     const textFromRefs = refNodes
-      .filter((n) => (n.data as AppNodeData).kind === "text")
-      .map((n) => (n.data as TextNodeData).content)
+      .filter((n) => ["text", "skill"].includes((n.data as AppNodeData).kind))
+      .map((n) => {
+        const nd = n.data as AppNodeData;
+        return nd.kind === "text" ? (nd as TextNodeData).content : (nd as any).content;
+      })
       .filter(Boolean)
       .join("\n");
 

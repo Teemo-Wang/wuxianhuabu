@@ -6,6 +6,7 @@ import { useCanvasStore } from "../store/canvasStore";
 import { api } from "../api/client";
 import type { ImageNodeData } from "../types";
 import { useImagePreviewStore } from "../store/imagePreviewStore";
+import { useImageEditorStore } from "../store/imageEditorStore";
 
 /** 图片显示区域的宽高比上下限：避免极端长图/宽图把节点撑得过高或过扁 */
 const MIN_RATIO = 220 / 320; // 高度不超过宽度的约 1.45 倍
@@ -15,6 +16,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as ImageNodeData;
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
   const openPreview = useImagePreviewStore((s) => s.open);
+  const openEditor = useImageEditorStore((s) => s.open);
   const inputRef = useRef<HTMLInputElement>(null);
   // 用 CSS aspect-ratio 让容器跟随图片真实宽高比自适应（不依赖手算像素高度，
   // 也不会受节点内边距影响），图片加载完成前先用默认比例占位，避免过度跳动
@@ -43,26 +45,38 @@ function ImageNodeComponent({ id, data, selected }: NodeProps) {
       </div>
 
       {nodeData.url ? (
-        <button
-          type="button"
-          className="nodrag block w-full cursor-zoom-in overflow-hidden rounded-md bg-canvas"
-          style={{ aspectRatio }}
-          onClick={() => openPreview(nodeData.url)}
-          title="点击查看完整图片"
-        >
-          <img
-            src={nodeData.url}
-            alt=""
-            className="h-full w-full object-contain"
-            draggable={false}
-            onLoad={(e) => {
-              const { naturalWidth, naturalHeight } = e.currentTarget;
-              if (!naturalWidth || !naturalHeight) return;
-              const ratio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, naturalWidth / naturalHeight));
-              setAspectRatio(ratio);
+        <div className="relative">
+          <button
+            type="button"
+            className="nodrag block w-full cursor-zoom-in overflow-hidden rounded-md bg-canvas"
+            style={{ aspectRatio }}
+            onClick={() => openPreview(nodeData.url)}
+            title="点击查看完整图片"
+          >
+            <img
+              src={nodeData.url}
+              alt=""
+              className="h-full w-full object-contain"
+              draggable={false}
+              onLoad={(e) => {
+                const { naturalWidth, naturalHeight } = e.currentTarget;
+                if (!naturalWidth || !naturalHeight) return;
+                const ratio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, naturalWidth / naturalHeight));
+                setAspectRatio(ratio);
+              }}
+            />
+          </button>
+          <button
+            type="button"
+            className="nodrag absolute bottom-1.5 right-1.5 rounded-md bg-black/60 px-2 py-1 text-[11px] text-white opacity-0 backdrop-blur transition-opacity group-hover:opacity-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              openEditor(id, nodeData.url);
             }}
-          />
-        </button>
+          >
+            打开编辑器
+          </button>
+        </div>
       ) : (
         <button
           type="button"

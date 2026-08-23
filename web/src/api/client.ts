@@ -1,5 +1,12 @@
 // 统一的后端 API 客户端，开发环境下经 vite proxy 转发到 :8787
-import type { ModelConfig, ModelConfigInput, ProjectFile, ProjectSummary, ThemeConfig } from "../types";
+import type {
+  ModelConfig,
+  ModelConfigInput,
+  ProjectFile,
+  ProjectSummary,
+  SkillEntry,
+  ThemeConfig,
+} from "../types";
 
 const BASE = "/api";
 
@@ -75,4 +82,24 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  // ComfyUI 工作流节点执行
+  runComfyWorkflow: (payload: {
+    baseUrl: string;
+    workflow: Record<string, any>;
+    inputs: Array<{ nodeId: string; field: string; type: "text" | "image"; value: string }>;
+    outputs: Array<{ slotId: string; nodeId: string }>;
+  }) =>
+    request<{ results: Array<{ slotId: string; imageUrl: string }> }>("/comfy-workflow/run", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  // Skill 库
+  listSkills: () => request<SkillEntry[]>("/skills"),
+  createSkill: (name: string, content: string) =>
+    request<SkillEntry>("/skills", { method: "POST", body: JSON.stringify({ name, content }) }),
+  updateSkill: (id: string, patch: Partial<Pick<SkillEntry, "name" | "content">>) =>
+    request<SkillEntry>(`/skills/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
+  deleteSkill: (id: string) => request<void>(`/skills/${id}`, { method: "DELETE" }),
 };

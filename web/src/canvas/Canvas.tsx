@@ -8,7 +8,6 @@ import {
   MiniMap,
   SelectionMode,
   useReactFlow,
-  type NodeMouseHandler,
   type OnConnectStart,
   type OnConnectEnd,
 } from "@xyflow/react";
@@ -18,15 +17,19 @@ import { TextNode } from "../nodes/TextNode";
 import { ImageNode } from "../nodes/ImageNode";
 import { VideoNode } from "../nodes/VideoNode";
 import { AudioNode } from "../nodes/AudioNode";
+import { ComfyWorkflowNode } from "../nodes/ComfyWorkflowNode";
+import { SkillNode } from "../nodes/SkillNode";
 import { GeneratingNode } from "../nodes/GeneratingNode";
 import { AddNodeMenu, type AddNodeMenuState, type NodeMenuType } from "./AddNodeMenu";
-import { useAgentStore } from "../store/agentStore";
+import { InlinePromptBar } from "./InlinePromptBar";
 
 const nodeTypes = {
   text: TextNode,
   image: ImageNode,
   video: VideoNode,
   audio: AudioNode,
+  "comfy-workflow": ComfyWorkflowNode,
+  skill: SkillNode,
   generating: GeneratingNode,
 };
 
@@ -43,7 +46,6 @@ export function Canvas() {
     addNode,
     connectNodes,
   } = useCanvasStore();
-  const openAgentPanel = useAgentStore((s) => s.openPanel);
 
   const { screenToFlowPosition } = useReactFlow();
   const [menu, setMenu] = useState<AddNodeMenuState | null>(null);
@@ -104,28 +106,49 @@ export function Canvas() {
   const handleSelectType = (type: NodeMenuType) => {
     if (!menu) return;
     const position = { x: menu.flowX, y: menu.flowY };
-    const newNode =
-      type === "text"
-        ? addNode({ type: "text", position, data: { kind: "text", content: "" } })
-        : type === "image"
-        ? addNode({ type: "image", position, data: { kind: "image", url: "" } })
-        : type === "video"
-        ? addNode({ type: "video", position, data: { kind: "video", url: "" } })
-        : addNode({ type: "audio", position, data: { kind: "audio", url: "" } });
+    let newNode;
+    switch (type) {
+      case "text":
+        newNode = addNode({ type: "text", position, data: { kind: "text", content: "" } });
+        break;
+      case "image":
+        newNode = addNode({ type: "image", position, data: { kind: "image", url: "" } });
+        break;
+      case "video":
+        newNode = addNode({ type: "video", position, data: { kind: "video", url: "" } });
+        break;
+      case "audio":
+        newNode = addNode({ type: "audio", position, data: { kind: "audio", url: "" } });
+        break;
+      case "comfy-workflow":
+        newNode = addNode({
+          type: "comfy-workflow",
+          position,
+          data: {
+            kind: "comfy-workflow",
+            name: "",
+            baseUrl: "http://127.0.0.1:8188",
+            workflow: {},
+            inputs: [],
+            outputs: [],
+            status: "idle",
+            results: {},
+          },
+        });
+        break;
+      case "skill":
+        newNode = addNode({
+          type: "skill",
+          position,
+          data: { kind: "skill", skillId: null, name: "", content: "" },
+        });
+        break;
+    }
     if (menu.connectFromId) {
       connectNodes([menu.connectFromId], newNode.id);
     }
     setMenu(null);
   };
-
-  // 双击节点：打开 Agent 面板并以该节点为引用（对应 TapNow 的“选中节点交给 Agent”）
-  const handleNodeDoubleClick: NodeMouseHandler = useCallback(
-    (_event, node) => {
-      if (node.type === "generating") return;
-      openAgentPanel([node.id]);
-    },
-    [openAgentPanel]
-  );
 
   if (!loaded) {
     return (
@@ -149,7 +172,6 @@ export function Canvas() {
         defaultViewport={viewport}
         onMoveEnd={(_e, vp) => setViewport(vp)}
         onPaneContextMenu={handlePaneContextMenu}
-        onNodeDoubleClick={handleNodeDoubleClick}
         onPaneClick={() => setMenu(null)}
         zoomOnDoubleClick={false}
         selectionOnDrag
@@ -174,6 +196,9 @@ export function Canvas() {
           style={{ backgroundColor: "var(--color-panel-bg)" }}
         />
       </ReactFlow>
+
+      {/* 选中节点时自动出现在其下方的内嵌提示词条，替代原来右侧悬浮的 Agent 面板 */}
+      <InlinePromptBar />
 
       {menu && (
         <AddNodeMenu state={menu} onSelect={handleSelectType} onClose={() => setMenu(null)} />

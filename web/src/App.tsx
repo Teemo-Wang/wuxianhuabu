@@ -4,10 +4,10 @@ import { ReactFlowProvider } from "@xyflow/react";
 import { Canvas } from "./canvas/Canvas";
 import { TopRightToolbar } from "./canvas/TopRightToolbar";
 import { SelectionActionBar } from "./canvas/SelectionActionBar";
-import { AgentPanel } from "./panels/AgentPanel";
 import { ModelManagerModal } from "./panels/ModelManagerModal";
 import { ThemeSettingsModal } from "./panels/ThemeSettingsModal";
 import { ImagePreviewModal } from "./panels/ImagePreviewModal";
+import { ImageEditorModal } from "./panels/ImageEditorModal";
 import { HomePage } from "./home/HomePage";
 import { useCanvasStore } from "./store/canvasStore";
 import { useModelStore } from "./store/modelStore";
@@ -59,13 +59,13 @@ function App() {
             onGoHome={goHome}
           />
           <SelectionActionBar />
-          <AgentPanel />
         </ReactFlowProvider>
       )}
 
       <ModelManagerModal open={modelsOpen} onClose={() => setModelsOpen(false)} />
       <ThemeSettingsModal open={themeOpen} onClose={() => setThemeOpen(false)} />
       <ImagePreviewModal />
+      <ImageEditorModal />
     </div>
   );
 }
