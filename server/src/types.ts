@@ -4,7 +4,7 @@
 /** 画布节点通用结构，具体内容由 data 字段区分类型 */
 export interface CanvasNodeData {
   id: string;
-  type: "text" | "image" | "generating";
+  type: "text" | "image" | "video" | "audio" | "generating";
   position: { x: number; y: number };
   data: Record<string, unknown>;
 }

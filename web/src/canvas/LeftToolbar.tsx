@@ -3,9 +3,13 @@ import { useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useCanvasStore } from "../store/canvasStore";
 
-const ITEMS: Array<{ type: "text" | "image"; label: string }> = [
+type NodeType = "text" | "image" | "video" | "audio";
+
+const ITEMS: Array<{ type: NodeType; label: string }> = [
   { type: "text", label: "文本" },
   { type: "image", label: "图片" },
+  { type: "video", label: "视频" },
+  { type: "audio", label: "音频" },
 ];
 
 export function LeftToolbar() {
@@ -13,7 +17,7 @@ export function LeftToolbar() {
   const addNode = useCanvasStore((s) => s.addNode);
   const { screenToFlowPosition } = useReactFlow();
 
-  const handleAdd = (type: "text" | "image") => {
+  const handleAdd = (type: NodeType) => {
     // 新节点放置在当前视口中心附近
     const center = screenToFlowPosition({
       x: window.innerWidth / 2,
@@ -21,8 +25,12 @@ export function LeftToolbar() {
     });
     if (type === "text") {
       addNode({ type: "text", position: center, data: { kind: "text", content: "" } });
-    } else {
+    } else if (type === "image") {
       addNode({ type: "image", position: center, data: { kind: "image", url: "" } });
+    } else if (type === "video") {
+      addNode({ type: "video", position: center, data: { kind: "video", url: "" } });
+    } else {
+      addNode({ type: "audio", position: center, data: { kind: "audio", url: "" } });
     }
     setOpen(false);
   };

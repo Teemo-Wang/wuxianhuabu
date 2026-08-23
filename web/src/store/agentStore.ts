@@ -14,6 +14,8 @@ export function getNodeLabel(node: AppNode): string {
   if (data.kind === "image") {
     return (data as ImageNodeData).generated ? "生成图片" : "图片";
   }
+  if (data.kind === "video") return "视频";
+  if (data.kind === "audio") return "音频";
   return "生成中";
 }
 

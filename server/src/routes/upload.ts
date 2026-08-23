@@ -8,14 +8,16 @@ import { UPLOADS_DIR } from "../lib/jsonStore.js";
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
   filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".png";
+    // 保留原始扩展名（图片/视频/音频都靠这个扩展名决定前端 <img>/<video>/<audio> 怎么渲染）
+    const ext = path.extname(file.originalname) || "";
     cb(null, `${randomUUID()}${ext}`);
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 单文件最大 20MB
+  // 单文件最大 200MB：图片通常很小，但视频节点上传的素材可能达到几十上百 MB
+  limits: { fileSize: 200 * 1024 * 1024 },
 });
 
 export const uploadRouter = Router();

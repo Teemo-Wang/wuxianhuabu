@@ -16,13 +16,17 @@ import "@xyflow/react/dist/style.css";
 import { useCanvasStore } from "../store/canvasStore";
 import { TextNode } from "../nodes/TextNode";
 import { ImageNode } from "../nodes/ImageNode";
+import { VideoNode } from "../nodes/VideoNode";
+import { AudioNode } from "../nodes/AudioNode";
 import { GeneratingNode } from "../nodes/GeneratingNode";
-import { AddNodeMenu, type AddNodeMenuState } from "./AddNodeMenu";
+import { AddNodeMenu, type AddNodeMenuState, type NodeMenuType } from "./AddNodeMenu";
 import { useAgentStore } from "../store/agentStore";
 
 const nodeTypes = {
   text: TextNode,
   image: ImageNode,
+  video: VideoNode,
+  audio: AudioNode,
   generating: GeneratingNode,
 };
 
@@ -97,12 +101,17 @@ export function Canvas() {
     [openMenuAt]
   );
 
-  const handleSelectType = (type: "text" | "image") => {
+  const handleSelectType = (type: NodeMenuType) => {
     if (!menu) return;
+    const position = { x: menu.flowX, y: menu.flowY };
     const newNode =
       type === "text"
-        ? addNode({ type: "text", position: { x: menu.flowX, y: menu.flowY }, data: { kind: "text", content: "" } })
-        : addNode({ type: "image", position: { x: menu.flowX, y: menu.flowY }, data: { kind: "image", url: "" } });
+        ? addNode({ type: "text", position, data: { kind: "text", content: "" } })
+        : type === "image"
+        ? addNode({ type: "image", position, data: { kind: "image", url: "" } })
+        : type === "video"
+        ? addNode({ type: "video", position, data: { kind: "video", url: "" } })
+        : addNode({ type: "audio", position, data: { kind: "audio", url: "" } });
     if (menu.connectFromId) {
       connectNodes([menu.connectFromId], newNode.id);
     }

@@ -76,6 +76,24 @@ export interface ImageNodeData {
   [key: string]: unknown;
 }
 
+/** 视频节点数据 */
+export interface VideoNodeData {
+  kind: "video";
+  url: string;
+  generated?: boolean;
+  sourcePrompt?: string;
+  [key: string]: unknown;
+}
+
+/** 音频节点数据 */
+export interface AudioNodeData {
+  kind: "audio";
+  url: string;
+  generated?: boolean;
+  sourcePrompt?: string;
+  [key: string]: unknown;
+}
+
 /** 生成中占位节点数据 */
 export interface GeneratingNodeData {
   kind: "generating";
@@ -83,4 +101,4 @@ export interface GeneratingNodeData {
   [key: string]: unknown;
 }
 
-export type AppNodeData = TextNodeData | ImageNodeData | GeneratingNodeData;
+export type AppNodeData = TextNodeData | ImageNodeData | VideoNodeData | AudioNodeData | GeneratingNodeData;

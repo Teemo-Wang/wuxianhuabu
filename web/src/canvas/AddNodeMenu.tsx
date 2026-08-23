@@ -1,4 +1,6 @@
 // 右键 / 双击画布空白区域弹出的新增节点菜单，也用于「拖拽连线到空白处松手」后的节点选择
+export type NodeMenuType = "text" | "image" | "video" | "audio";
+
 export interface AddNodeMenuState {
   screenX: number;
   screenY: number;
@@ -10,13 +12,15 @@ export interface AddNodeMenuState {
 
 interface Props {
   state: AddNodeMenuState;
-  onSelect: (type: "text" | "image") => void;
+  onSelect: (type: NodeMenuType) => void;
   onClose: () => void;
 }
 
-const ITEMS: Array<{ type: "text" | "image"; label: string; desc: string }> = [
+const ITEMS: Array<{ type: NodeMenuType; label: string; desc: string }> = [
   { type: "text", label: "文本节点", desc: "记录提示词 / 脚本 / 说明" },
   { type: "image", label: "图片节点", desc: "上传图片或作为生成结果占位" },
+  { type: "video", label: "视频节点", desc: "上传视频素材或生成结果占位" },
+  { type: "audio", label: "音频节点", desc: "上传音频素材或生成结果占位" },
 ];
 
 export function AddNodeMenu({ state, onSelect, onClose }: Props) {
