@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { ReactFlowProvider } from "@xyflow/react";
 import { Canvas } from "./canvas/Canvas";
-import { LeftToolbar } from "./canvas/LeftToolbar";
 import { TopRightToolbar } from "./canvas/TopRightToolbar";
 import { SelectionActionBar } from "./canvas/SelectionActionBar";
 import { AgentPanel } from "./panels/AgentPanel";
@@ -53,7 +52,6 @@ function App() {
       ) : (
         <ReactFlowProvider>
           <Canvas />
-          <LeftToolbar />
           <TopRightToolbar
             projectName={projectName}
             onOpenModels={() => setModelsOpen(true)}

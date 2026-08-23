@@ -30,6 +30,7 @@ interface CanvasState {
   loadProject: (projectId: string) => Promise<void>;
   resetCanvas: () => void;
   scheduleSave: () => void;
+  renameCurrentProject: (name: string) => Promise<void>;
 
   onNodesChange: (changes: NodeChange<AppNode>[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
@@ -154,5 +155,18 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     }));
     set({ edges: [...get().edges, ...newEdges] });
     get().scheduleSave();
+  },
+
+  renameCurrentProject: async (name) => {
+    const projectId = get().projectId;
+    const trimmed = name.trim();
+    if (!projectId || !trimmed || trimmed === get().projectName) return;
+    // 先本地更新，交互上即时生效，再异步同步到后端
+    set({ projectName: trimmed });
+    try {
+      await api.renameProject(projectId, trimmed);
+    } catch (err) {
+      console.error("重命名项目失败", err);
+    }
   },
 }));
