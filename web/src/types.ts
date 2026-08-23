@@ -128,6 +128,8 @@ export interface ComfyWorkflowNodeData {
   errorMessage?: string;
   /** 每个输出槎位最近一次的结果地址，key 为槎位 id */
   results: Record<string, string>;
+  /** 若这个节点是从工作流库加载的，记录库条目 id，方便后续「同步更新」 */
+  libraryId?: string;
   [key: string]: unknown;
 }
 
@@ -146,6 +148,19 @@ export interface SkillEntry {
   id: string;
   name: string;
   content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** ComfyUI 工作流库条目（后端 data/comfy-workflows.json 持久化），
+ * 保存好之后可以在任意 ComfyUI 工作流节点里「从库加载」复用，不用每次重新粘贴 workflow JSON */
+export interface ComfyWorkflowEntry {
+  id: string;
+  name: string;
+  baseUrl: string;
+  workflow: Record<string, any>;
+  inputs: ComfyWorkflowIOSlot[];
+  outputs: ComfyWorkflowIOSlot[];
   createdAt: string;
   updatedAt: string;
 }

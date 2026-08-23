@@ -1,5 +1,6 @@
 // 统一的后端 API 客户端，开发环境下经 vite proxy 转发到 :8787
 import type {
+  ComfyWorkflowEntry,
   ModelConfig,
   ModelConfigInput,
   ProjectFile,
@@ -102,4 +103,12 @@ export const api = {
   updateSkill: (id: string, patch: Partial<Pick<SkillEntry, "name" | "content">>) =>
     request<SkillEntry>(`/skills/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   deleteSkill: (id: string) => request<void>(`/skills/${id}`, { method: "DELETE" }),
+
+  // ComfyUI 工作流库
+  listComfyWorkflows: () => request<ComfyWorkflowEntry[]>("/comfy-workflows"),
+  createComfyWorkflow: (entry: Omit<ComfyWorkflowEntry, "id" | "createdAt" | "updatedAt">) =>
+    request<ComfyWorkflowEntry>("/comfy-workflows", { method: "POST", body: JSON.stringify(entry) }),
+  updateComfyWorkflow: (id: string, patch: Partial<Omit<ComfyWorkflowEntry, "id" | "createdAt" | "updatedAt">>) =>
+    request<ComfyWorkflowEntry>(`/comfy-workflows/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
+  deleteComfyWorkflow: (id: string) => request<void>(`/comfy-workflows/${id}`, { method: "DELETE" }),
 };

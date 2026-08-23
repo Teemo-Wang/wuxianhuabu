@@ -27,6 +27,18 @@ export interface SkillEntry {
   updatedAt: string;
 }
 
+/** ComfyUI 工作流库条目：保存好之后可在任意工作流节点里直接加载复用 */
+export interface ComfyWorkflowEntry {
+  id: string;
+  name: string;
+  baseUrl: string;
+  workflow: Record<string, any>;
+  inputs: ComfyWorkflowIOSlot[];
+  outputs: ComfyWorkflowIOSlot[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** 画布连线 */
 export interface CanvasEdgeData {
   id: string;

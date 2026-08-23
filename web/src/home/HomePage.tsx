@@ -8,6 +8,8 @@ interface Props {
   onOpenProject: (projectId: string) => void;
   onOpenModels: () => void;
   onOpenTheme: () => void;
+  onOpenSkills: () => void;
+  onOpenComfyWorkflows: () => void;
 }
 
 function formatUpdatedAt(iso: string): string {
@@ -25,7 +27,7 @@ function formatUpdatedAt(iso: string): string {
   ).padStart(2, "0")}`;
 }
 
-export function HomePage({ onOpenProject, onOpenModels, onOpenTheme }: Props) {
+export function HomePage({ onOpenProject, onOpenModels, onOpenTheme, onOpenSkills, onOpenComfyWorkflows }: Props) {
   const projects = useProjectStore((s) => s.projects);
   const loaded = useProjectStore((s) => s.loaded);
   const loadProjects = useProjectStore((s) => s.loadProjects);
@@ -76,6 +78,20 @@ export function HomePage({ onOpenProject, onOpenModels, onOpenTheme }: Props) {
             onClick={onOpenModels}
           >
             模型管理
+          </button>
+          <button
+            type="button"
+            className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary hover:border-accent hover:text-accent"
+            onClick={onOpenComfyWorkflows}
+          >
+            工作流库
+          </button>
+          <button
+            type="button"
+            className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary hover:border-accent hover:text-accent"
+            onClick={onOpenSkills}
+          >
+            Skill 库
           </button>
           <button
             type="button"

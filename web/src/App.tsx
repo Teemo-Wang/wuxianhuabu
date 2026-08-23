@@ -8,6 +8,8 @@ import { ModelManagerModal } from "./panels/ModelManagerModal";
 import { ThemeSettingsModal } from "./panels/ThemeSettingsModal";
 import { ImagePreviewModal } from "./panels/ImagePreviewModal";
 import { ImageEditorModal } from "./panels/ImageEditorModal";
+import { SkillLibraryModal } from "./panels/SkillLibraryModal";
+import { ComfyWorkflowLibraryModal } from "./panels/ComfyWorkflowLibraryModal";
 import { HomePage } from "./home/HomePage";
 import { useCanvasStore } from "./store/canvasStore";
 import { useModelStore } from "./store/modelStore";
@@ -25,6 +27,8 @@ function App() {
   const [view, setView] = useState<View>({ name: "home" });
   const [modelsOpen, setModelsOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  const [comfyWorkflowsOpen, setComfyWorkflowsOpen] = useState(false);
 
   useEffect(() => {
     void loadTheme();
@@ -48,6 +52,8 @@ function App() {
           onOpenProject={openProject}
           onOpenModels={() => setModelsOpen(true)}
           onOpenTheme={() => setThemeOpen(true)}
+          onOpenSkills={() => setSkillsOpen(true)}
+          onOpenComfyWorkflows={() => setComfyWorkflowsOpen(true)}
         />
       ) : (
         <ReactFlowProvider>
@@ -56,6 +62,8 @@ function App() {
             projectName={projectName}
             onOpenModels={() => setModelsOpen(true)}
             onOpenTheme={() => setThemeOpen(true)}
+            onOpenSkills={() => setSkillsOpen(true)}
+            onOpenComfyWorkflows={() => setComfyWorkflowsOpen(true)}
             onGoHome={goHome}
           />
           <SelectionActionBar />
@@ -64,6 +72,8 @@ function App() {
 
       <ModelManagerModal open={modelsOpen} onClose={() => setModelsOpen(false)} />
       <ThemeSettingsModal open={themeOpen} onClose={() => setThemeOpen(false)} />
+      <SkillLibraryModal open={skillsOpen} onClose={() => setSkillsOpen(false)} />
+      <ComfyWorkflowLibraryModal open={comfyWorkflowsOpen} onClose={() => setComfyWorkflowsOpen(false)} />
       <ImagePreviewModal />
       <ImageEditorModal />
     </div>

@@ -9,6 +9,7 @@ import { themeRouter } from "./routes/theme.js";
 import { uploadRouter } from "./routes/upload.js";
 import { generateRouter } from "./routes/generate.js";
 import { comfyWorkflowRouter } from "./routes/comfyWorkflow.js";
+import { comfyWorkflowLibraryRouter } from "./routes/comfyWorkflowLibrary.js";
 import { skillsRouter } from "./routes/skills.js";
 
 const app = express();
@@ -28,6 +29,7 @@ app.use("/api/theme", themeRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/generate", generateRouter);
 app.use("/api/comfy-workflow", comfyWorkflowRouter);
+app.use("/api/comfy-workflows", comfyWorkflowLibraryRouter);
 app.use("/api/skills", skillsRouter);
 
 // 统一错误处理，避免未捕获异常导致进程退出

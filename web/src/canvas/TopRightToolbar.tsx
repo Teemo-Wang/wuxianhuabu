@@ -14,10 +14,19 @@ interface Props {
   projectName: string;
   onOpenModels: () => void;
   onOpenTheme: () => void;
+  onOpenSkills: () => void;
+  onOpenComfyWorkflows: () => void;
   onGoHome: () => void;
 }
 
-export function TopRightToolbar({ projectName, onOpenModels, onOpenTheme, onGoHome }: Props) {
+export function TopRightToolbar({
+  projectName,
+  onOpenModels,
+  onOpenTheme,
+  onOpenSkills,
+  onOpenComfyWorkflows,
+  onGoHome,
+}: Props) {
   const saveStatus = useCanvasStore((s) => s.saveStatus);
   const renameCurrentProject = useCanvasStore((s) => s.renameCurrentProject);
 
@@ -95,6 +104,20 @@ export function TopRightToolbar({ projectName, onOpenModels, onOpenTheme, onGoHo
           onClick={onOpenModels}
         >
           模型管理
+        </button>
+        <button
+          type="button"
+          className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary shadow hover:border-accent hover:text-accent"
+          onClick={onOpenComfyWorkflows}
+        >
+          工作流库
+        </button>
+        <button
+          type="button"
+          className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary shadow hover:border-accent hover:text-accent"
+          onClick={onOpenSkills}
+        >
+          Skill 库
         </button>
         <button
           type="button"
