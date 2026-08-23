@@ -54,6 +54,13 @@ body {
   display: none;
 }
 
+/* 画布空白背景层禁止文字选中：避免在空白处双击新建节点时，浏览器把这次双击
+   当成文字选择操作，导致随后弹出的「添加节点」菜单文案带着选中背景色出现。
+   只作用于背景层，节点内部文本（.react-flow__node）不受影响，仍可正常选中/复制。 */
+.react-flow__pane {
+  user-select: none;
+}
+
 /* Controls 容器本身也需要边框，避免深色背景下和画布融为一体 */
 .react-flow__controls {
   border-radius: 8px;

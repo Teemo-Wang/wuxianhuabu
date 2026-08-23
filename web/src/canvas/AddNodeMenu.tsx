@@ -47,7 +47,7 @@ export function AddNodeMenu({ state, onSelect, onClose }: Props) {
       {/* 透明遮罩用于点击空白处关闭菜单 */}
       <div className="fixed inset-0 z-40" onClick={onClose} onContextMenu={(e) => e.preventDefault()} />
       <div
-        className="fixed z-50 origin-top-left rounded-2xl border border-panel-border bg-panel p-2 shadow-2xl transition-[opacity,transform] duration-150 ease-out"
+        className="fixed z-50 origin-top-left select-none rounded-2xl border border-panel-border bg-panel p-2 shadow-2xl transition-[opacity,transform] duration-150 ease-out"
         style={{
           left,
           top: state.screenY,
