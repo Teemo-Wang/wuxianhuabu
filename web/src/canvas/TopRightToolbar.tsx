@@ -20,15 +20,8 @@ export function TopRightToolbar({ projectName, onOpenModels, onOpenTheme, onGoHo
 
   return (
     <>
-      {/* 左上角显示当前项目名，与左侧新增节点按钮保持视觉分离 */}
-      <div className="absolute left-16 top-4 z-20 flex items-center">
-        <span className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary shadow">
-          {projectName || "未命名项目"}
-        </span>
-      </div>
-
-      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-        <span className="text-[11px] text-text-secondary">{SAVE_STATUS_LABEL[saveStatus]}</span>
+      {/* 左上角：首页按钮 + 当前项目名，与左侧新增节点按钮保持视觉分离 */}
+      <div className="absolute left-16 top-4 z-20 flex items-center gap-2">
         <button
           type="button"
           className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary shadow hover:border-accent hover:text-accent"
@@ -36,6 +29,13 @@ export function TopRightToolbar({ projectName, onOpenModels, onOpenTheme, onGoHo
         >
           首页
         </button>
+        <span className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary shadow">
+          {projectName || "未命名项目"}
+        </span>
+      </div>
+
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        <span className="text-[11px] text-text-secondary">{SAVE_STATUS_LABEL[saveStatus]}</span>
         <button
           type="button"
           className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary shadow hover:border-accent hover:text-accent"
