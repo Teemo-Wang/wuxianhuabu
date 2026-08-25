@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useComfyWorkflowLibraryStore } from "../store/comfyWorkflowLibraryStore";
 import { ComfyWorkflowSlotsEditor } from "./ComfyWorkflowSlotsEditor";
+import { JsonFileUploadButton } from "./JsonFileUploadButton";
 import type { ComfyWorkflowEntry, ComfyWorkflowIOSlot } from "../types";
 
 interface Props {
@@ -165,15 +166,20 @@ export function ComfyWorkflowLibraryModal({ open, onClose }: Props) {
                   </label>
                 </div>
 
-                <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                  Workflow JSON（在 ComfyUI 中「导出为 API 格式」后粘贴）
+                <div className="flex flex-col gap-1 text-xs text-text-secondary">
+                  <div className="flex items-center justify-between">
+                    <span>Workflow JSON（在 ComfyUI 中「导出为 API 格式」后粘贴，或直接上传文件）</span>
+                    <JsonFileUploadButton
+                      onLoaded={(text) => setDraft({ ...draft, workflowText: text })}
+                    />
+                  </div>
                   <textarea
                     className="h-32 rounded-md border border-panel-border bg-canvas p-1.5 font-mono text-xs text-text-primary outline-none focus:border-accent"
                     placeholder='{"3": {"class_type": "KSampler", "inputs": {...}}, ...}'
                     value={draft.workflowText}
                     onChange={(e) => setDraft({ ...draft, workflowText: e.target.value })}
                   />
-                </label>
+                </div>
 
                 <ComfyWorkflowSlotsEditor
                   title="输入槎位"
