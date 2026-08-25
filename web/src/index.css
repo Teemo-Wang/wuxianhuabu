@@ -30,6 +30,14 @@ body {
   overflow: hidden;
 }
 
+/* 表单输入框的 placeholder 弱化处理：颜色更淡、稍微降低不透明度，
+   避免占位提示文字和用户实际填入的内容看起来太接近，分不清哪个是提示哪个是已填内容 */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.55;
+}
+
 /* React Flow 画布背景跟随主题变量 */
 .react-flow {
   background-color: var(--color-canvas-bg);

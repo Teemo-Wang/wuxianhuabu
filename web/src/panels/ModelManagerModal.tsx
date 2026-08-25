@@ -10,6 +10,9 @@ import {
 } from "../lib/simpleApiModel";
 import type { ComfyUiModelConfig, CustomApiModelConfig, ModelConfig, ModelConfigInput } from "../types";
 
+/** 简易模式图片尺寸下拉框里的预设选项；不在这个列表里的值都视为"自定义尺寸"，显示额外输入框 */
+const PRESET_SIZES = ["1024x1024", "1024x1792", "1792x1024"];
+
 type Draft =
   | (Omit<CustomApiModelConfig, "kind"> & { kind: "custom-api"; name: string })
   | (Omit<ComfyUiModelConfig, "kind"> & { kind: "comfyui"; name: string; workflowText: string });
@@ -272,9 +275,6 @@ export function ModelManagerModal({ open, onClose }: Props) {
 
                     {formMode === "simple" ? (
                       <>
-                        <p className="text-[11px] text-text-secondary">
-                          适用于 OpenAI 兼容的文生图接口（官方 API 或各类中转/代理服务）。填好下面几项即可，程序会自动拼装请求。
-                        </p>
                         <label className="flex flex-col gap-1 text-xs text-text-secondary">
                           API 地址（不含 /images/generations，程序会自动补上）
                           <input
@@ -305,14 +305,29 @@ export function ModelManagerModal({ open, onClose }: Props) {
                           </label>
                           <label className="flex w-32 flex-col gap-1 text-xs text-text-secondary">
                             图片尺寸
+                            <select
+                              className="rounded-md border border-panel-border bg-canvas p-1.5 text-sm text-text-primary"
+                              value={PRESET_SIZES.includes(simpleFields.size) ? simpleFields.size : "0"}
+                              onChange={(e) => setSimpleFields({ ...simpleFields, size: e.target.value })}
+                            >
+                              <option value="1024x1024">1024x1024</option>
+                              <option value="1024x1792">1024x1792</option>
+                              <option value="1792x1024">1792x1024</option>
+                              <option value="0">自定义…</option>
+                            </select>
+                          </label>
+                        </div>
+                        {!PRESET_SIZES.includes(simpleFields.size) && (
+                          <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                            自定义尺寸（宽x高）
                             <input
                               className="rounded-md border border-panel-border bg-canvas p-1.5 text-sm text-text-primary outline-none focus:border-accent"
-                              placeholder="1024x1024"
-                              value={simpleFields.size}
+                              placeholder="例如 512x512"
+                              value={simpleFields.size === "0" ? "" : simpleFields.size}
                               onChange={(e) => setSimpleFields({ ...simpleFields, size: e.target.value })}
                             />
                           </label>
-                        </div>
+                        )}
                         <label className="flex flex-col gap-1 text-xs text-text-secondary">
                           响应格式
                           <select
