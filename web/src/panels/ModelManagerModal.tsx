@@ -120,6 +120,10 @@ export function ModelManagerModal({ open, onClose }: Props) {
             setSaveError("请填写 API 地址、密钥和模型名称");
             return;
           }
+          if (!simpleFields.size.trim() || simpleFields.size === "0") {
+            setSaveError("请填写自定义图片尺寸");
+            return;
+          }
           const generated = buildSimpleApiConfig(simpleFields);
           payload = { kind: "custom-api", name: draft.name, ...generated };
         } else {
