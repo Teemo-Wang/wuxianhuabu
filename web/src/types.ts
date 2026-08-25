@@ -8,6 +8,22 @@ export interface CustomApiModelConfig {
   bodyTemplate: string;
   responseImagePath: string;
   responseIsUrl: boolean;
+  /**
+   * 是否通过「简易模式」创建/编辑（适用于 OpenAI 兼容的 images 接口，如各类中转/代理服务）。
+   * 为 true 时，上面几个字段（endpoint/headers/bodyTemplate/...）是根据下面的简易字段自动生成的，
+   * 编辑时会优先展示简易表单；为 false/未设置则是通过「高级模式」手动配置的旧模型。
+   */
+  simpleMode?: boolean;
+  /** 简易模式：API 根地址，如 https://api.openai.com/v1 */
+  simpleBaseUrl?: string;
+  /** 简易模式：API 密钥（Bearer Token） */
+  simpleApiKey?: string;
+  /** 简易模式：请求体里的 model 字段 */
+  simpleModelName?: string;
+  /** 简易模式：图片尺寸，如 1024x1024 */
+  simpleSize?: string;
+  /** 简易模式：响应格式，对应 OpenAI 的 response_format 参数 */
+  simpleResponseFormat?: "url" | "b64_json";
 }
 
 export interface ComfyUiModelConfig {

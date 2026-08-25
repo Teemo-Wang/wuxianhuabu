@@ -80,7 +80,23 @@ cd ../web && npm run dev
 
 ## 如何接入真实的自定义 API 模型
 
-后端在 `server/src/lib/customApi.ts` 中实现。填写模型配置时：
+模型管理里新建/编辑「自定义 API」模型时，有「简易模式」和「高级模式」两种表单。
+
+### 简易模式（推荐，适用于 OpenAI 兼容接口）
+
+如果你要接的是 OpenAI 官方 API，或者各类 OpenAI 兼容的中转/代理服务（很多"一 API 多模型"平台都是这种格式），用简易模式只需要填 4 项：
+
+- **API 地址**：填到 `/v1` 为止即可，不用带 `/images/generations`，程序会自动补上。例如 `https://api.openai.com/v1`。
+- **API 密钥**：平台给你的密钥（通常 `sk-` 开头），会自动填进 `Authorization: Bearer <密钥>` 请求头。
+- **模型名称**：具体用哪个模型，比如 `gpt-image-1`，会填进请求体的 `model` 字段。
+- **图片尺寸**：如 `1024x1024`，具体支持哪些尺寸看你用的服务文档。
+- **响应格式**：选 `url`（服务返回图片链接，会自动下载落盘）或 `b64_json`（服务返回 base64 编码，会自动解码）。
+
+填好这些后台会自动拼出请求体 `{"model":"...","prompt":"...","n":1,"size":"...","response_format":"..."}`，并按 `data.0.url` 或 `data.0.b64_json` 解析响应，不需要自己写 JSON 模板和响应路径。
+
+### 高级模式（完全手动配置）
+
+接口不是 OpenAI 兼容格式、或者响应结构比较特殊时，切到高级模式手动配置：
 
 - `endpoint` / `method` / `headers`：按你的服务要求填写，例如 `Authorization: Bearer xxx`。
 - `bodyTemplate`：一段 JSON 字符串模板，发起请求前会做字符串替换：
@@ -89,6 +105,14 @@ cd ../web && npm run dev
   - `{{images}}` → 全部图片地址组成的 JSON 数组
 - `responseImagePath`：从响应 JSON 中取图片地址的点号路径，比如响应是 `{"data":{"images":[{"url":"..."}]}}`，就填 `data.images.0.url`。
 - `responseIsUrl`：勾选表示该字段是一个可访问的图片 URL（后端会代为下载落盘）；不勾选则按 base64（支持 `data:image/png;base64,...` 前缀）解析。
+
+实现见 `server/src/lib/customApi.ts`（实际调用逻辑，两种模式最终走的是同一套请求/解析代码）和 `web/src/lib/simpleApiModel.ts`（简易模式字段→完整配置的转换逻辑）。
+
+### 已知限制
+
+- 简易/高级模式目前都只支持发 `application/json` 请求体，如果目标接口要求 `multipart/form-data`（比如 OpenAI 的 `images/edits` 图生图接口通常要求上传文件），现在还接不上，需要额外开发。
+- 如果目标接口鉴权需要动态签名（时间戳/随机数/HMAC 签名等），固定 Header 机制处理不了，需要额外开发签名逻辑。
+- 如果目标接口是"提交任务拿 taskId、再轮询查结果"的异步模式，现在的同步请求也处理不了，需要参考 ComfyUI 那套轮询逻辑单独实现。
 
 ## 如何接入 ComfyUI 工作流
 

@@ -96,6 +96,13 @@ export interface CustomApiModelConfig {
   responseImagePath: string;
   /** 响应图片地址是否已经是完整可访问 URL（否则视为 base64） */
   responseIsUrl: boolean;
+  /** 是否由前端「简易模式」表单生成（用于回填编辑表单，不影响实际调用逻辑） */
+  simpleMode?: boolean;
+  simpleBaseUrl?: string;
+  simpleApiKey?: string;
+  simpleModelName?: string;
+  simpleSize?: string;
+  simpleResponseFormat?: "url" | "b64_json";
 }
 
 /** ComfyUI 工作流模型配置 */
