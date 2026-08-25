@@ -1,4 +1,4 @@
-# Node Canvas Studio（无限画布节点式生图工具 · Demo）
+# Teemo-无限画布（节点式生图工具 · Demo）
 
 一个参考 [TapNow](https://tapnow.ai) 无限画布节点式创作体验的个人使用 Demo：
 在无限画布上创建文本/图片/视频/音频/ComfyUI 工作流/Skill 节点，选中节点后会在其下方自动出现内嵌提示词条，选择模型（自定义 API 或 ComfyUI 工作流）生成新图片，结果自动落地为新节点并与输入节点连线。

@@ -1,23 +1,36 @@
-// 图片编辑二级页（MVP 框架）：全屏进入，可在原图上自由涂鸦标注 / 添加文字，
-// 支持撤销重做，保存后导出为新图片并写回节点。局部重绘生成先留出入口，后续再接生成逻辑。
+// 图片编辑二级页：全屏进入，可涂鸦标注、画蒙版、添加文字，
+// 支持撤销重做；保存写回节点；底部可选用模型做局部重绘/图生图
 import { useEffect, useRef, useState } from "react";
 import { useImageEditorStore } from "../store/imageEditorStore";
 import { useCanvasStore } from "../store/canvasStore";
+import { useModelStore } from "../store/modelStore";
 import { api } from "../api/client";
 
-type Tool = "select" | "pen" | "text";
+type Tool = "select" | "pen" | "mask" | "text";
 
 type DrawItem =
-  | { kind: "stroke"; color: string; width: number; points: { x: number; y: number }[] }
+  | { kind: "stroke"; role: "draw" | "mask"; color: string; width: number; points: { x: number; y: number }[] }
   | { kind: "text"; x: number; y: number; text: string; color: string; fontSize: number };
 
 const PRESET_COLORS = ["#ff3b30", "#ffcc00", "#34c759", "#0a84ff", "#ffffff"];
+
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("导出图片失败"));
+    }, "image/png");
+  });
+}
 
 export function ImageEditorModal() {
   const nodeId = useImageEditorStore((s) => s.nodeId);
   const url = useImageEditorStore((s) => s.url);
   const close = useImageEditorStore((s) => s.close);
   const updateNodeData = useCanvasStore((s) => s.updateNodeData);
+  const models = useModelStore((s) => s.models);
+  const activeModelId = useModelStore((s) => s.activeModelId);
+  const setActiveModel = useModelStore((s) => s.setActiveModel);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -32,9 +45,15 @@ export function ImageEditorModal() {
   const [textDraft, setTextDraft] = useState("");
   const [prompt, setPrompt] = useState("");
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
 
-  // 加载原图并按图片真实尺寸设置画布分辨率（内部像素与图片一致，展示时用 CSS 缩放适配屏幕）
+  const imageModels = models.filter((m) => (m.outputType ?? "image") === "image");
+  const editorModelId =
+    activeModelId && imageModels.some((m) => m.id === activeModelId)
+      ? activeModelId
+      : (imageModels[0]?.id ?? null);
+
   useEffect(() => {
     if (!url) return;
     setItems([]);
@@ -65,14 +84,21 @@ export function ImageEditorModal() {
     for (const item of drawItems) {
       if (item.kind === "stroke") {
         if (item.points.length < 2) continue;
-        ctx.strokeStyle = item.color;
-        ctx.lineWidth = item.width;
+        ctx.save();
+        if (item.role === "mask") {
+          ctx.strokeStyle = "rgba(255, 59, 48, 0.55)";
+          ctx.lineWidth = Math.max(item.width, 12);
+        } else {
+          ctx.strokeStyle = item.color;
+          ctx.lineWidth = item.width;
+        }
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.beginPath();
         ctx.moveTo(item.points[0].x, item.points[0].y);
         for (const p of item.points.slice(1)) ctx.lineTo(p.x, p.y);
         ctx.stroke();
+        ctx.restore();
       } else {
         ctx.fillStyle = item.color;
         ctx.font = `${item.fontSize}px -apple-system, sans-serif`;
@@ -86,7 +112,6 @@ export function ImageEditorModal() {
     redraw(items);
   }, [items]);
 
-  /** 把鼠标事件的客户端坐标换算成画布内部像素坐标（因为画布可能被 CSS 缩放显示） */
   const toCanvasPoint = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -97,9 +122,15 @@ export function ImageEditorModal() {
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (tool === "pen") {
+    if (tool === "pen" || tool === "mask") {
       const point = toCanvasPoint(e);
-      currentStrokeRef.current = { kind: "stroke", color, width: penWidth, points: [point] };
+      currentStrokeRef.current = {
+        kind: "stroke",
+        role: tool === "mask" ? "mask" : "draw",
+        color,
+        width: tool === "mask" ? Math.max(penWidth * 4, 24) : penWidth,
+        points: [point],
+      };
       redraw([...items, currentStrokeRef.current]);
     } else if (tool === "text") {
       setPendingTextPos(toCanvasPoint(e));
@@ -108,14 +139,14 @@ export function ImageEditorModal() {
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (tool !== "pen" || !currentStrokeRef.current) return;
+    if ((tool !== "pen" && tool !== "mask") || !currentStrokeRef.current) return;
     const point = toCanvasPoint(e);
     currentStrokeRef.current.kind === "stroke" && currentStrokeRef.current.points.push(point);
     redraw([...items, currentStrokeRef.current]);
   };
 
   const handlePointerUp = () => {
-    if (tool === "pen" && currentStrokeRef.current) {
+    if ((tool === "pen" || tool === "mask") && currentStrokeRef.current) {
       setItems((prev) => [...prev, currentStrokeRef.current as DrawItem]);
       setRedoStack([]);
       currentStrokeRef.current = null;
@@ -148,14 +179,62 @@ export function ImageEditorModal() {
     setItems((prev) => [...prev, last]);
   };
 
-  const handleSave = async () => {
+  const exportComposite = async (): Promise<File> => {
     const canvas = canvasRef.current;
-    if (!canvas || !nodeId) return;
+    if (!canvas) throw new Error("画布未就绪");
+    const blob = await canvasToBlob(canvas);
+    return new File([blob], "edited.png", { type: "image/png" });
+  };
+
+  const exportOriginal = async (): Promise<File> => {
+    const img = imageRef.current;
+    if (!img) throw new Error("原图未加载");
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const ctx = c.getContext("2d");
+    if (!ctx) throw new Error("无法导出原图");
+    ctx.drawImage(img, 0, 0);
+    const blob = await canvasToBlob(c);
+    return new File([blob], "original.png", { type: "image/png" });
+  };
+
+  const exportMask = async (): Promise<File | null> => {
+    const maskStrokes = items.filter((i) => i.kind === "stroke" && i.role === "mask") as Extract<
+      DrawItem,
+      { kind: "stroke" }
+    >[];
+    if (maskStrokes.length === 0) return null;
+    const src = canvasRef.current;
+    if (!src) return null;
+    const c = document.createElement("canvas");
+    c.width = src.width;
+    c.height = src.height;
+    const ctx = c.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    for (const stroke of maskStrokes) {
+      if (stroke.points.length < 2) continue;
+      ctx.lineWidth = stroke.width;
+      ctx.beginPath();
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (const p of stroke.points.slice(1)) ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+    const blob = await canvasToBlob(c);
+    return new File([blob], "mask.png", { type: "image/png" });
+  };
+
+  const handleSave = async () => {
+    if (!nodeId) return;
     setSaving(true);
+    setHint(null);
     try {
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!blob) throw new Error("导出图片失败");
-      const file = new File([blob], "edited.png", { type: "image/png" });
+      const file = await exportComposite();
       const { url: newUrl } = await api.uploadFile(file);
       updateNodeData(nodeId, { url: newUrl, generated: false });
       close();
@@ -167,17 +246,63 @@ export function ImageEditorModal() {
     }
   };
 
+  const handleGenerate = async () => {
+    if (!nodeId) return;
+    if (!editorModelId) {
+      setHint("请先在模型管理里添加一个「生成类型=图片」的模型");
+      return;
+    }
+    if (!prompt.trim()) {
+      setHint("请先填写要改成什么样");
+      return;
+    }
+    setGenerating(true);
+    setHint(null);
+    try {
+      const maskFile = await exportMask();
+      const imageFile = maskFile ? await exportOriginal() : await exportComposite();
+      const uploadedImage = await api.uploadFile(imageFile);
+      const images = [uploadedImage.url];
+      let maskUrl: string | undefined;
+      if (maskFile) {
+        const uploadedMask = await api.uploadFile(maskFile);
+        maskUrl = uploadedMask.url;
+        images.push(maskUrl);
+      }
+      const result = await api.generate({
+        modelId: editorModelId,
+        prompt: prompt.trim(),
+        images,
+        mask: maskUrl,
+      });
+      const newUrl = result.url ?? result.imageUrl;
+      if ((result.kind ?? "image") !== "image") {
+        setHint("局部重绘需要图片模型，请把该模型的生成类型改成「图片」");
+        return;
+      }
+      updateNodeData(nodeId, { url: newUrl, generated: true, sourcePrompt: prompt.trim() });
+      useImageEditorStore.setState({ url: newUrl });
+      setPrompt("");
+      setHint("已生成并写回图片节点");
+    } catch (err: any) {
+      console.error("局部重绘失败", err);
+      setHint(err?.message ?? "生成失败");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   if (!url || !nodeId) return null;
 
   return (
     <div className="fixed inset-0 z-[80] flex flex-col bg-black">
-      {/* 顶部工具条：选择 / 画笔 / 文字 / 撤销 / 重做 / 关闭 / 保存 */}
       <div className="flex items-center justify-between border-b border-panel-border bg-panel px-4 py-2">
         <div className="flex items-center gap-1">
           {(
             [
               { tool: "select" as Tool, label: "选择" },
               { tool: "pen" as Tool, label: "画笔" },
+              { tool: "mask" as Tool, label: "蒙版" },
               { tool: "text" as Tool, label: "文字" },
             ] as const
           ).map((item) => (
@@ -195,17 +320,21 @@ export function ImageEditorModal() {
             </button>
           ))}
 
-          {tool === "pen" && (
+          {(tool === "pen" || tool === "mask") && (
             <div className="ml-2 flex items-center gap-1.5 border-l border-panel-border pl-2">
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`h-5 w-5 rounded-full border-2 ${color === c ? "border-accent" : "border-transparent"}`}
-                  style={{ backgroundColor: c }}
-                  onClick={() => setColor(c)}
-                />
-              ))}
+              {tool === "pen" &&
+                PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`h-5 w-5 rounded-full border-2 ${color === c ? "border-accent" : "border-transparent"}`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => setColor(c)}
+                  />
+                ))}
+              {tool === "mask" && (
+                <span className="text-[11px] text-text-secondary">红色区域会被重绘</span>
+              )}
               <select
                 className="ml-1 rounded-md border border-panel-border bg-canvas px-1 py-0.5 text-xs text-text-primary"
                 value={penWidth}
@@ -239,7 +368,15 @@ export function ImageEditorModal() {
         </div>
 
         <div className="flex items-center gap-2">
-          {hint && <span className="text-xs text-red-400">{hint}</span>}
+          {hint && (
+            <span
+              className={`max-w-[360px] truncate text-xs ${
+                hint.startsWith("已生成") ? "text-accent" : "text-red-400"
+              }`}
+            >
+              {hint}
+            </span>
+          )}
           <button
             type="button"
             className="rounded-md border border-panel-border px-3 py-1.5 text-xs text-text-secondary hover:border-accent hover:text-accent"
@@ -258,28 +395,22 @@ export function ImageEditorModal() {
         </div>
       </div>
 
-      {/* 画布区域 */}
       <div className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
         <canvas
           ref={canvasRef}
           className="max-h-full max-w-full rounded-lg shadow-2xl"
-          style={{ cursor: tool === "pen" ? "crosshair" : tool === "text" ? "text" : "default" }}
+          style={{
+            cursor: tool === "pen" || tool === "mask" ? "crosshair" : tool === "text" ? "text" : "default",
+          }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
         />
 
-        {/* 文字工具点击画布后的内联输入框 */}
         {pendingTextPos && (
           <div
             className="absolute z-10"
-            style={{
-              // pendingTextPos 是画布内部像素坐标，这里简化为直接叠加在画布容器的中心区域附近，
-              // 精确定位留给后续迭代（MVP 阶段以可用为先）
-              left: "50%",
-              top: "50%",
-              transform: "translate(-50%, -50%)",
-            }}
+            style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)" }}
           >
             <div className="flex items-center gap-1.5 rounded-lg border border-panel-border bg-panel p-1.5 shadow-xl">
               <input
@@ -305,21 +436,38 @@ export function ImageEditorModal() {
         )}
       </div>
 
-      {/* 底部提示词输入条：为后续接入「局部重绘生成」预留入口 */}
       <div className="flex items-center gap-2 border-t border-panel-border bg-panel px-4 py-3">
+        <select
+          className="w-40 shrink-0 rounded-md border border-panel-border bg-canvas px-2 py-2 text-xs text-text-primary"
+          value={editorModelId ?? ""}
+          onChange={(e) => setActiveModel(e.target.value || null)}
+        >
+          {imageModels.length === 0 ? (
+            <option value="">没有图片模型</option>
+          ) : (
+            imageModels.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))
+          )}
+        </select>
         <input
           className="flex-1 rounded-md border border-panel-border bg-canvas px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
-          placeholder="请输入图像生成的提示词（局部重绘生成功能开发中）"
+          placeholder="用蒙版涂要改的地方，然后写「把这里改成……」；不涂蒙版则整张图按提示词重绘"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void handleGenerate();
+          }}
         />
         <button
           type="button"
-          className="rounded-md border border-panel-border px-4 py-2 text-xs text-text-secondary"
-          disabled
-          title="局部重绘生成功能开发中，先提供标注框架"
+          className="rounded-md bg-accent px-4 py-2 text-xs font-medium text-accent-fg hover:opacity-90 disabled:opacity-50"
+          disabled={generating}
+          onClick={() => void handleGenerate()}
         >
-          生成
+          {generating ? "生成中…" : "局部重绘"}
         </button>
       </div>
     </div>

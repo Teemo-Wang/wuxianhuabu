@@ -78,6 +78,9 @@ export interface ProjectSummary {
   updatedAt: string;
 }
 
+/** 模型产出的媒体类型：决定生成结果落地为图片/视频/音频节点 */
+export type MediaOutputType = "image" | "video" | "audio";
+
 /** 自定义 HTTP API 模型配置 */
 export interface CustomApiModelConfig {
   kind: "custom-api";
@@ -119,8 +122,11 @@ export interface ComfyUiModelConfig {
   /** 承载输入图片的节点 ID（LoadImage 节点），可选 */
   imageNodeId?: string;
   imageInputField?: string;
-  /** 输出图片节点 ID（SaveImage 节点） */
+  /** 输出节点 ID（SaveImage / SaveVideo 等） */
   outputNodeId: string;
+  /** 蒙版输入节点 ID（LoadImage），局部重绘时使用，可选 */
+  maskNodeId?: string;
+  maskInputField?: string;
 }
 
 export type ModelConfig = (CustomApiModelConfig | ComfyUiModelConfig) & {
@@ -128,6 +134,8 @@ export type ModelConfig = (CustomApiModelConfig | ComfyUiModelConfig) & {
   name: string;
   color?: string;
   createdAt: string;
+  /** 缺省为 image，选 video 时生成结果会落地为视频节点 */
+  outputType?: MediaOutputType;
 };
 
 export interface GenerateRequestBody {
@@ -135,9 +143,15 @@ export interface GenerateRequestBody {
   prompt: string;
   /** 引用的上游图片资源地址（相对路径 /uploads/xxx 或外部 URL） */
   images: string[];
+  /** 局部重绘蒙版图地址（白=要改的区域，黑=保留） */
+  mask?: string;
 }
 
 export interface GenerateResultBody {
+  /** 生成结果地址 */
+  url: string;
+  kind: MediaOutputType;
+  /** 兼容旧前端字段，与 url 相同 */
   imageUrl: string;
 }
 

@@ -5,7 +5,7 @@ import { getNodesBounds, useReactFlow, useViewport } from "@xyflow/react";
 import { useCanvasStore } from "../store/canvasStore";
 import { useAgentStore, getNodeLabel } from "../store/agentStore";
 import { useModelStore } from "../store/modelStore";
-import type { AppNodeData, ImageNodeData } from "../types";
+import type { AppNodeData, ImageNodeData, MediaOutputType } from "../types";
 
 const BAR_WIDTH = 360;
 const GAP_BELOW_SELECTION = 16;
@@ -55,6 +55,9 @@ export function InlinePromptBar() {
   );
 
   const activeModel = models.find((m) => m.id === activeModelId);
+  const outputType: MediaOutputType = activeModel?.outputType ?? "image";
+  const generateLabel =
+    outputType === "video" ? "生成视频" : outputType === "audio" ? "生成音频" : "生成图片";
 
   if (selectedNodes.length === 0) return null;
 
@@ -108,7 +111,8 @@ export function InlinePromptBar() {
                     >
                       <span className="truncate">{m.name}</span>
                       <span className="ml-1 shrink-0 text-text-secondary">
-                        {m.kind === "comfyui" ? "ComfyUI" : "API"}
+                        {m.kind === "comfyui" ? "ComfyUI" : "API"} ·{" "}
+                        {m.outputType === "video" ? "视频" : m.outputType === "audio" ? "音频" : "图片"}
                       </span>
                     </button>
                   ))
@@ -184,7 +188,11 @@ export function InlinePromptBar() {
       {/* 提示词输入 */}
       <textarea
         className="nodrag min-h-[64px] w-full resize-none rounded-lg border border-panel-border bg-canvas p-2 text-sm text-text-primary outline-none focus:border-accent"
-        placeholder="描述任何你想生成的内容，按 @ 引用素材"
+        placeholder={
+          outputType === "video"
+            ? "描述画面怎么动，引用一张图即可图生视频"
+            : "描述任何你想生成的内容，按 @ 引用素材"
+        }
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
       />
@@ -198,7 +206,7 @@ export function InlinePromptBar() {
           className="nodrag rounded-full bg-accent px-4 py-1.5 text-xs font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
           onClick={() => generate(activeModelId)}
         >
-          {generating ? "生成中…" : "生成"}
+          {generating ? "生成中…" : generateLabel}
         </button>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { generateRouter } from "./routes/generate.js";
 import { comfyWorkflowRouter } from "./routes/comfyWorkflow.js";
 import { comfyWorkflowLibraryRouter } from "./routes/comfyWorkflowLibrary.js";
 import { skillsRouter } from "./routes/skills.js";
+import { agentRouter } from "./routes/agent.js";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 8787);
@@ -31,6 +32,7 @@ app.use("/api/generate", generateRouter);
 app.use("/api/comfy-workflow", comfyWorkflowRouter);
 app.use("/api/comfy-workflows", comfyWorkflowLibraryRouter);
 app.use("/api/skills", skillsRouter);
+app.use("/api/agent", agentRouter);
 
 // 统一错误处理，避免未捕获异常导致进程退出
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

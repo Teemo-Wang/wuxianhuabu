@@ -1,5 +1,7 @@
 // 前端共享类型，结构与 server/src/types.ts 保持一致
 
+export type MediaOutputType = "image" | "video" | "audio";
+
 export interface CustomApiModelConfig {
   kind: "custom-api";
   method: "GET" | "POST" | "PUT";
@@ -35,6 +37,8 @@ export interface ComfyUiModelConfig {
   imageNodeId?: string;
   imageInputField?: string;
   outputNodeId: string;
+  maskNodeId?: string;
+  maskInputField?: string;
 }
 
 export type ModelConfig = (CustomApiModelConfig | ComfyUiModelConfig) & {
@@ -42,12 +46,14 @@ export type ModelConfig = (CustomApiModelConfig | ComfyUiModelConfig) & {
   name: string;
   color?: string;
   createdAt: string;
+  outputType?: MediaOutputType;
 };
 
 /** 创建/编辑模型时使用的输入类型（不含服务端生成的 id / createdAt） */
 export type ModelConfigInput = (CustomApiModelConfig | ComfyUiModelConfig) & {
   name: string;
   color?: string;
+  outputType?: MediaOutputType;
 };
 
 export interface ThemeConfig {
@@ -114,6 +120,7 @@ export interface AudioNodeData {
 export interface GeneratingNodeData {
   kind: "generating";
   prompt: string;
+  targetKind?: MediaOutputType;
   [key: string]: unknown;
 }
 

@@ -2,19 +2,35 @@
 import { randomUUID } from "node:crypto";
 import type { ComfyUiModelConfig } from "../types.js";
 
-interface ComfyHistoryOutputImage {
+interface ComfyHistoryOutputFile {
   filename: string;
   subfolder: string;
   type: string;
 }
 
+function injectLoadImage(
+  workflow: Record<string, any>,
+  nodeId: string,
+  field: string,
+  filename: string,
+  label: string
+) {
+  const node = workflow[nodeId];
+  if (!node) {
+    throw new Error(`ComfyUI workflow 中找不到${label}节点 ID=${nodeId}`);
+  }
+  node.inputs = node.inputs ?? {};
+  node.inputs[field] = filename;
+}
+
 /**
- * 深拷贝一份 workflow，并把提示词/图片输入注入到指定节点的指定字段
+ * 深拷贝一份 workflow，并把提示词/图片/蒙版输入注入到指定节点的指定字段
  */
 function buildPrompt(
   config: ComfyUiModelConfig,
   prompt: string,
-  imageFilename?: string
+  imageFilename?: string,
+  maskFilename?: string
 ): Record<string, any> {
   const workflow = JSON.parse(JSON.stringify(config.workflow));
 
@@ -26,15 +42,37 @@ function buildPrompt(
   promptNode.inputs[config.promptInputField] = prompt;
 
   if (config.imageNodeId && imageFilename) {
-    const imageNode = workflow[config.imageNodeId];
-    if (!imageNode) {
-      throw new Error(`ComfyUI workflow 中找不到 imageNodeId=${config.imageNodeId} 对应的节点`);
-    }
-    imageNode.inputs = imageNode.inputs ?? {};
-    imageNode.inputs[config.imageInputField ?? "image"] = imageFilename;
+    injectLoadImage(
+      workflow,
+      config.imageNodeId,
+      config.imageInputField ?? "image",
+      imageFilename,
+      "图片输入"
+    );
+  }
+
+  if (config.maskNodeId && maskFilename) {
+    injectLoadImage(
+      workflow,
+      config.maskNodeId,
+      config.maskInputField ?? "image",
+      maskFilename,
+      "蒙版输入"
+    );
   }
 
   return workflow;
+}
+
+/** ComfyUI 历史记录里图片/视频/音频可能落在不同字段，按优先级取第一个文件 */
+function pickOutputFile(outputNode: any): ComfyHistoryOutputFile | null {
+  const lists = [outputNode?.images, outputNode?.gifs, outputNode?.videos, outputNode?.audio];
+  for (const list of lists) {
+    if (Array.isArray(list) && list[0]?.filename) {
+      return list[0] as ComfyHistoryOutputFile;
+    }
+  }
+  return null;
 }
 
 /**
@@ -70,12 +108,12 @@ export async function runComfyUiWorkflow(
   config: ComfyUiModelConfig,
   prompt: string,
   imageFilename: string | undefined,
-  opts: { timeoutMs?: number; pollIntervalMs?: number } = {}
+  opts: { timeoutMs?: number; pollIntervalMs?: number; maskFilename?: string } = {}
 ): Promise<{ buffer: Buffer; contentType: string }> {
   const base = config.baseUrl.replace(/\/$/, "");
   const clientId = randomUUID();
   const promptId = randomUUID();
-  const workflow = buildPrompt(config, prompt, imageFilename);
+  const workflow = buildPrompt(config, prompt, imageFilename, opts.maskFilename);
 
   const submitRes = await fetch(`${base}/prompt`, {
     method: "POST",
@@ -101,20 +139,20 @@ export async function runComfyUiWorkflow(
       const entry = historyJson[finalPromptId];
       if (entry && entry.outputs) {
         const outputNode = entry.outputs[config.outputNodeId];
-        const images: ComfyHistoryOutputImage[] | undefined = outputNode?.images;
-        if (images && images.length > 0) {
-          const img = images[0];
+        const file = pickOutputFile(outputNode);
+        if (file) {
           const viewUrl = `${base}/view?filename=${encodeURIComponent(
-            img.filename
-          )}&subfolder=${encodeURIComponent(img.subfolder ?? "")}&type=${encodeURIComponent(
-            img.type ?? "output"
+            file.filename
+          )}&subfolder=${encodeURIComponent(file.subfolder ?? "")}&type=${encodeURIComponent(
+            file.type ?? "output"
           )}`;
           const viewRes = await fetch(viewUrl);
           if (!viewRes.ok) {
-            throw new Error(`从 ComfyUI 获取生成图片失败: HTTP ${viewRes.status}`);
+            throw new Error(`从 ComfyUI 获取生成结果失败: HTTP ${viewRes.status}`);
           }
           const arrayBuffer = await viewRes.arrayBuffer();
-          const contentType = viewRes.headers.get("content-type") ?? "image/png";
+          const headerType = viewRes.headers.get("content-type") ?? "";
+          const contentType = contentTypeFromFilename(file.filename, headerType);
           return { buffer: Buffer.from(arrayBuffer), contentType };
         }
       }
@@ -123,4 +161,19 @@ export async function runComfyUiWorkflow(
   }
 
   throw new Error("等待 ComfyUI 生成结果超时，请检查工作流是否正常运行");
+}
+
+function contentTypeFromFilename(filename: string, headerType: string): string {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov")) {
+    if (lower.endsWith(".webm")) return "video/webm";
+    return "video/mp4";
+  }
+  if (lower.endsWith(".mp3")) return "audio/mpeg";
+  if (lower.endsWith(".wav")) return "audio/wav";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (headerType && !headerType.includes("octet-stream")) return headerType;
+  return "image/png";
 }

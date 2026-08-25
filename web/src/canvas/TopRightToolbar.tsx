@@ -16,6 +16,7 @@ interface Props {
   onOpenTheme: () => void;
   onOpenSkills: () => void;
   onOpenComfyWorkflows: () => void;
+  onOpenAgent: () => void;
   onGoHome: () => void;
 }
 
@@ -25,6 +26,7 @@ export function TopRightToolbar({
   onOpenTheme,
   onOpenSkills,
   onOpenComfyWorkflows,
+  onOpenAgent,
   onGoHome,
 }: Props) {
   const saveStatus = useCanvasStore((s) => s.saveStatus);
@@ -98,6 +100,13 @@ export function TopRightToolbar({
 
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
         <span className="text-[11px] text-text-secondary">{SAVE_STATUS_LABEL[saveStatus]}</span>
+        <button
+          type="button"
+          className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary shadow hover:border-accent hover:text-accent"
+          onClick={onOpenAgent}
+        >
+          Agent
+        </button>
         <button
           type="button"
           className="rounded-md border border-panel-border bg-panel px-3 py-1.5 text-xs text-text-primary shadow hover:border-accent hover:text-accent"

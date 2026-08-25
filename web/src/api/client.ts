@@ -78,8 +78,8 @@ export const api = {
   },
 
   // 生成
-  generate: (payload: { modelId: string; prompt: string; images: string[] }) =>
-    request<{ imageUrl: string }>("/generate", {
+  generate: (payload: { modelId: string; prompt: string; images: string[]; mask?: string }) =>
+    request<{ url: string; kind: "image" | "video" | "audio"; imageUrl: string }>("/generate", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
@@ -111,4 +111,33 @@ export const api = {
   updateComfyWorkflow: (id: string, patch: Partial<Omit<ComfyWorkflowEntry, "id" | "createdAt" | "updatedAt">>) =>
     request<ComfyWorkflowEntry>(`/comfy-workflows/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   deleteComfyWorkflow: (id: string) => request<void>(`/comfy-workflows/${id}`, { method: "DELETE" }),
+
+  getAgentSettings: () =>
+    request<{ baseUrl: string; apiKey: string; modelName: string }>("/agent/settings"),
+  saveAgentSettings: (settings: { baseUrl: string; apiKey: string; modelName: string }) =>
+    request<{ baseUrl: string; apiKey: string; modelName: string }>("/agent/settings", {
+      method: "PUT",
+      body: JSON.stringify(settings),
+    }),
+  agentChat: (payload: {
+    message: string;
+    history: Array<{ role: "user" | "assistant"; content: string }>;
+    canvas: {
+      nodes: Array<{ id: string; kind: string; label: string; selected?: boolean }>;
+      selectedIds: string[];
+    };
+    models: Array<{ id: string; name: string; kind: string; outputType: string }>;
+  }) =>
+    request<{
+      say: string;
+      actions: Array<{
+        op: "add_text" | "generate";
+        content?: string;
+        x?: number;
+        y?: number;
+        prompt?: string;
+        modelId?: string;
+        referenceIds?: string[];
+      }>;
+    }>("/agent/chat", { method: "POST", body: JSON.stringify(payload) }),
 };

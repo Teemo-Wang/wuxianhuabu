@@ -2,7 +2,8 @@
 import { create } from "zustand";
 import { api } from "../api/client";
 import { useCanvasStore, type AppNode } from "./canvasStore";
-import type { AppNodeData, ImageNodeData, TextNodeData } from "../types";
+import { useModelStore } from "./modelStore";
+import type { AppNodeData, ImageNodeData, MediaOutputType, TextNodeData } from "../types";
 
 /** 生成一个节点在 @ 引用列表 / 提示词 token 中展示的简短标签 */
 export function getNodeLabel(node: AppNode): string {
@@ -32,7 +33,7 @@ interface AgentState {
   addReference: (id: string) => void;
   removeReference: (id: string) => void;
   setPrompt: (prompt: string) => void;
-  generate: (modelId: string | null) => Promise<void>;
+  generate: (modelId: string | null, opts?: { prompt?: string; referenceIds?: string[] }) => Promise<void>;
 }
 
 export const useAgentStore = create<AgentState>((set, get) => ({
@@ -58,12 +59,18 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   removeReference: (id) => set({ referenceIds: get().referenceIds.filter((r) => r !== id) }),
   setPrompt: (prompt) => set({ prompt }),
 
-  generate: async (modelId) => {
+  generate: async (modelId, opts) => {
     if (!modelId) {
       set({ errorMessage: "请先选择一个模型" });
       return;
     }
+    if (opts?.prompt != null) set({ prompt: opts.prompt });
+    if (opts?.referenceIds) set({ referenceIds: opts.referenceIds });
+
     const canvas = useCanvasStore.getState();
+    const selectedModel = useModelStore.getState().models.find((m) => m.id === modelId);
+    const targetKind: MediaOutputType = selectedModel?.outputType ?? "image";
+
     const refNodes = get()
       .referenceIds.map((id) => canvas.nodes.find((n) => n.id === id))
       .filter((n): n is AppNode => Boolean(n));
@@ -89,6 +96,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       return;
     }
 
+    if (targetKind === "video" && images.length === 0 && !finalPrompt.trim()) {
+      set({ errorMessage: "生成视频需要提示词，或先引用一张图片（图生视频）" });
+      return;
+    }
+
     set({ generating: true, errorMessage: null });
 
     // 计算新节点的落点：引用节点最右侧位置的右侧，若无引用则放在视口中心附近
@@ -102,7 +114,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     const placeholder = canvas.addNode({
       type: "generating",
       position: { x: anchorX, y: anchorY },
-      data: { kind: "generating", prompt: finalPrompt },
+      data: { kind: "generating", prompt: finalPrompt, targetKind },
     });
     if (get().referenceIds.length > 0) {
       canvas.connectNodes(get().referenceIds, placeholder.id);
@@ -110,13 +122,15 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
     try {
       const result = await api.generate({ modelId, prompt: finalPrompt, images });
+      const kind = result.kind ?? targetKind;
+      const url = result.url ?? result.imageUrl;
       useCanvasStore.setState({
         nodes: useCanvasStore.getState().nodes.map((n) =>
           n.id === placeholder.id
             ? {
                 ...n,
-                type: "image",
-                data: { kind: "image", url: result.imageUrl, generated: true, sourcePrompt: finalPrompt },
+                type: kind,
+                data: { kind, url, generated: true, sourcePrompt: finalPrompt },
               }
             : n
         ),

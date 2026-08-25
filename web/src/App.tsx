@@ -10,10 +10,12 @@ import { ImagePreviewModal } from "./panels/ImagePreviewModal";
 import { ImageEditorModal } from "./panels/ImageEditorModal";
 import { SkillLibraryModal } from "./panels/SkillLibraryModal";
 import { ComfyWorkflowLibraryModal } from "./panels/ComfyWorkflowLibraryModal";
+import { AgentPanel } from "./panels/AgentPanel";
 import { HomePage } from "./home/HomePage";
 import { useCanvasStore } from "./store/canvasStore";
 import { useModelStore } from "./store/modelStore";
 import { useThemeStore } from "./store/themeStore";
+import { useCanvasAgentStore } from "./store/canvasAgentStore";
 
 type View = { name: "home" } | { name: "project"; projectId: string };
 
@@ -23,6 +25,7 @@ function App() {
   const projectName = useCanvasStore((s) => s.projectName);
   const loadModels = useModelStore((s) => s.loadModels);
   const loadTheme = useThemeStore((s) => s.loadTheme);
+  const toggleAgent = useCanvasAgentStore((s) => s.toggle);
 
   const [view, setView] = useState<View>({ name: "home" });
   const [modelsOpen, setModelsOpen] = useState(false);
@@ -64,9 +67,11 @@ function App() {
             onOpenTheme={() => setThemeOpen(true)}
             onOpenSkills={() => setSkillsOpen(true)}
             onOpenComfyWorkflows={() => setComfyWorkflowsOpen(true)}
+            onOpenAgent={toggleAgent}
             onGoHome={goHome}
           />
           <SelectionActionBar />
+          <AgentPanel />
         </ReactFlowProvider>
       )}
 

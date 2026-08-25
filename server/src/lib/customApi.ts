@@ -67,17 +67,18 @@ export async function callCustomApiModel(
   const value = getByPath(json, config.responseImagePath);
   if (typeof value !== "string" || value.length === 0) {
     throw new Error(
-      `自定义模型响应中未找到图片数据，responseImagePath="${config.responseImagePath}"`
+      `自定义模型响应中未找到结果数据，responseImagePath="${config.responseImagePath}"`
     );
   }
 
   if (config.responseIsUrl) {
-    const imgRes = await fetch(value);
-    if (!imgRes.ok) {
-      throw new Error(`下载模型返回的图片失败: HTTP ${imgRes.status}`);
+    const mediaRes = await fetch(value);
+    if (!mediaRes.ok) {
+      throw new Error(`下载模型返回的文件失败: HTTP ${mediaRes.status}`);
     }
-    const arrayBuffer = await imgRes.arrayBuffer();
-    const contentType = imgRes.headers.get("content-type") ?? "image/png";
+    const arrayBuffer = await mediaRes.arrayBuffer();
+    const headerType = mediaRes.headers.get("content-type") ?? "";
+    const contentType = guessContentType(value, headerType);
     return { buffer: Buffer.from(arrayBuffer), contentType };
   }
 
@@ -87,4 +88,17 @@ export async function callCustomApiModel(
     return { buffer: Buffer.from(match[2], "base64"), contentType: match[1] };
   }
   return { buffer: Buffer.from(value, "base64"), contentType: "image/png" };
+}
+
+function guessContentType(urlOrPath: string, headerType: string): string {
+  const lower = urlOrPath.toLowerCase().split("?")[0];
+  if (lower.endsWith(".mp4") || lower.endsWith(".mov")) return "video/mp4";
+  if (lower.endsWith(".webm")) return "video/webm";
+  if (lower.endsWith(".mp3")) return "audio/mpeg";
+  if (lower.endsWith(".wav")) return "audio/wav";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (headerType && !headerType.includes("octet-stream")) return headerType;
+  return "image/png";
 }

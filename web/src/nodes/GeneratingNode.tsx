@@ -15,7 +15,13 @@ function GeneratingNodeComponent({ data, selected }: NodeProps) {
       <Handle type="target" position={Position.Left} className="!bg-accent !w-2 !h-2" />
       <Handle type="source" position={Position.Right} className="!bg-accent !w-2 !h-2" />
 
-      <div className="mb-1 text-[11px] font-medium text-text-secondary">生成中</div>
+      <div className="mb-1 text-[11px] font-medium text-text-secondary">
+        {nodeData.targetKind === "video"
+          ? "正在生成视频"
+          : nodeData.targetKind === "audio"
+            ? "正在生成音频"
+            : "生成中"}
+      </div>
       <div className="flex h-[180px] w-full flex-col items-center justify-center gap-2 rounded-md border border-panel-border bg-panel/40">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
         {nodeData.prompt && (

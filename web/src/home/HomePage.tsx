@@ -70,7 +70,7 @@ export function HomePage({ onOpenProject, onOpenModels, onOpenTheme, onOpenSkill
     <div className="h-screen w-screen overflow-y-auto bg-canvas">
       {/* 顶部导航条 */}
       <header className="flex items-center justify-between border-b border-panel-border px-6 py-3">
-        <span className="text-sm font-semibold text-text-primary">Node Canvas Studio</span>
+        <span className="text-sm font-semibold text-text-primary">Teemo-无限画布</span>
         <div className="flex items-center gap-2">
           <button
             type="button"

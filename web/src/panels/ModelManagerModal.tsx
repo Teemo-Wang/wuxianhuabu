@@ -8,15 +8,21 @@ import {
   simpleFieldsFromConfig,
   type SimpleApiFields,
 } from "../lib/simpleApiModel";
-import type { ComfyUiModelConfig, CustomApiModelConfig, ModelConfig, ModelConfigInput } from "../types";
+import type { ComfyUiModelConfig, CustomApiModelConfig, MediaOutputType, ModelConfig, ModelConfigInput } from "../types";
 import { JsonFileUploadButton } from "./JsonFileUploadButton";
 
 /** 简易模式图片尺寸下拉框里的预设选项；不在这个列表里的值都视为"自定义尺寸"，显示额外输入框 */
 const PRESET_SIZES = ["1024x1024", "1024x1792", "1792x1024"];
 
+const OUTPUT_TYPE_LABEL: Record<MediaOutputType, string> = {
+  image: "图片",
+  video: "视频",
+  audio: "音频",
+};
+
 type Draft =
-  | (Omit<CustomApiModelConfig, "kind"> & { kind: "custom-api"; name: string })
-  | (Omit<ComfyUiModelConfig, "kind"> & { kind: "comfyui"; name: string; workflowText: string });
+  | (Omit<CustomApiModelConfig, "kind"> & { kind: "custom-api"; name: string; outputType: MediaOutputType })
+  | (Omit<ComfyUiModelConfig, "kind"> & { kind: "comfyui"; name: string; workflowText: string; outputType: MediaOutputType });
 
 function emptyCustomApiDraft(): Draft {
   return {
@@ -28,6 +34,7 @@ function emptyCustomApiDraft(): Draft {
     bodyTemplate: '{\n  "prompt": "{{prompt}}",\n  "image": "{{image0}}"\n}',
     responseImagePath: "data.imageUrl",
     responseIsUrl: true,
+    outputType: "image",
   };
 }
 
@@ -43,14 +50,23 @@ function emptyComfyUiDraft(): Draft {
     imageNodeId: "",
     imageInputField: "image",
     outputNodeId: "9",
+    maskNodeId: "",
+    maskInputField: "image",
+    outputType: "image",
   };
 }
 
 function draftFromModel(model: ModelConfig): Draft {
   if (model.kind === "custom-api") {
-    return { ...model };
+    return { ...model, outputType: model.outputType ?? "image" };
   }
-  return { ...model, workflowText: JSON.stringify(model.workflow, null, 2) };
+  return {
+    ...model,
+    workflowText: JSON.stringify(model.workflow, null, 2),
+    maskNodeId: model.maskNodeId ?? "",
+    maskInputField: model.maskInputField ?? "image",
+    outputType: model.outputType ?? "image",
+  };
 }
 
 interface Props {
@@ -126,7 +142,7 @@ export function ModelManagerModal({ open, onClose }: Props) {
             return;
           }
           const generated = buildSimpleApiConfig(simpleFields);
-          payload = { kind: "custom-api", name: draft.name, ...generated };
+          payload = { kind: "custom-api", name: draft.name, outputType: draft.outputType, ...generated };
         } else {
           let headers: Record<string, string> = {};
           try {
@@ -145,6 +161,7 @@ export function ModelManagerModal({ open, onClose }: Props) {
             responseImagePath: draft.responseImagePath,
             responseIsUrl: draft.responseIsUrl,
             simpleMode: false,
+            outputType: draft.outputType,
           };
         }
       } else {
@@ -165,6 +182,9 @@ export function ModelManagerModal({ open, onClose }: Props) {
           imageNodeId: draft.imageNodeId || undefined,
           imageInputField: draft.imageInputField || undefined,
           outputNodeId: draft.outputNodeId,
+          maskNodeId: draft.maskNodeId || undefined,
+          maskInputField: draft.maskInputField || undefined,
+          outputType: draft.outputType,
         };
       }
 
@@ -226,7 +246,7 @@ export function ModelManagerModal({ open, onClose }: Props) {
                   <span className="truncate">
                     {m.name}
                     <span className="ml-1 text-text-secondary">
-                      ({m.kind === "comfyui" ? "ComfyUI" : "自定义 API"})
+                      ({m.kind === "comfyui" ? "ComfyUI" : "API"} · {OUTPUT_TYPE_LABEL[m.outputType ?? "image"]})
                     </span>
                   </span>
                 </button>
@@ -248,6 +268,21 @@ export function ModelManagerModal({ open, onClose }: Props) {
                     value={draft.name}
                     onChange={(e) => setDraft({ ...draft, name: e.target.value } as Draft)}
                   />
+                </label>
+
+                <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                  生成类型（决定结果落到画布上是图片、视频还是音频节点）
+                  <select
+                    className="rounded-md border border-panel-border bg-canvas p-1.5 text-sm text-text-primary"
+                    value={draft.outputType}
+                    onChange={(e) =>
+                      setDraft({ ...draft, outputType: e.target.value as MediaOutputType } as Draft)
+                    }
+                  >
+                    <option value="image">图片</option>
+                    <option value="video">视频</option>
+                    <option value="audio">音频</option>
+                  </select>
                 </label>
 
                 {draft.kind === "custom-api" ? (
@@ -479,11 +514,28 @@ export function ModelManagerModal({ open, onClose }: Props) {
                         />
                       </label>
                       <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                        输出节点 ID（SaveImage）
+                        输出节点 ID（SaveImage / SaveVideo）
                         <input
                           className="rounded-md border border-panel-border bg-canvas p-1.5 text-sm text-text-primary outline-none focus:border-accent"
                           value={draft.outputNodeId}
                           onChange={(e) => setDraft({ ...draft, outputNodeId: e.target.value })}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                        蒙版输入节点 ID（可选，局部重绘用）
+                        <input
+                          className="rounded-md border border-panel-border bg-canvas p-1.5 text-sm text-text-primary outline-none focus:border-accent"
+                          value={draft.maskNodeId ?? ""}
+                          onChange={(e) => setDraft({ ...draft, maskNodeId: e.target.value })}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs text-text-secondary">
+                        蒙版字段名
+                        <input
+                          className="rounded-md border border-panel-border bg-canvas p-1.5 text-sm text-text-primary outline-none focus:border-accent"
+                          placeholder="image"
+                          value={draft.maskInputField ?? "image"}
+                          onChange={(e) => setDraft({ ...draft, maskInputField: e.target.value })}
                         />
                       </label>
                     </div>

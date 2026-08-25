@@ -176,13 +176,12 @@ export function Canvas() {
         zoomOnDoubleClick={false}
         selectionOnDrag
         selectionMode={SelectionMode.Partial}
-        panOnDrag={[1, 2]}
-        // 触摸板双指滑动走 panOnScroll（平移画布），双指捏合缩放走 zoomOnPinch；
-        // 关掉 zoomOnScroll 避免双指滑动被当成滚轮缩放
-        panOnScroll
-        panOnScrollSpeed={1}
-        zoomOnScroll={false}
+        // 中键拖动平移画布；滚轮缩放；X / Backspace / Delete 删除选中节点
+        panOnDrag={[1]}
+        panOnScroll={false}
+        zoomOnScroll
         zoomOnPinch
+        deleteKeyCode={["Backspace", "Delete", "KeyX"]}
         minZoom={0.1}
         maxZoom={2.5}
         proOptions={{ hideAttribution: true }}
