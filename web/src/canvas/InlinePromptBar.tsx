@@ -75,8 +75,12 @@ export function InlinePromptBar() {
         width: BAR_WIDTH,
       }}
     >
-      {/* 引用素材行：已引用节点的缩略标签 + 继续添加引用 */}
-      <div className="flex items-center gap-1.5 overflow-x-auto">
+      {/* 引用素材行：已引用节点的缩略标签 + 继续添加引用
+          注意：只让"已引用节点标签"这一小段横向滚动（overflow-x-auto），
+          模型选择器和"+"按钮放在外层不裁剪的容器里——否则这一整行设置
+          overflow-x 后，浏览器会把未显式设置的 overflow-y 也强制变成 auto，
+          导致往上弹出的下拉菜单被这行自身的滚动区域裁掉，看起来像“点击无反应”。 */}
+      <div className="flex items-center gap-1.5">
         {/* 模型选择器 */}
         <div className="relative shrink-0">
           <button
@@ -124,29 +128,31 @@ export function InlinePromptBar() {
 
         <div className="h-4 w-px shrink-0 bg-panel-border" />
 
-        {/* 已引用节点的缩略标签 */}
-        {referenceNodes.map((n) => {
-          const data = n!.data as AppNodeData;
-          const isImage = data.kind === "image";
-          return (
-            <span
-              key={n!.id}
-              className="nodrag flex shrink-0 items-center gap-1 rounded-full border border-panel-border bg-canvas px-2 py-1 text-[11px] text-text-primary"
-            >
-              {isImage && (data as ImageNodeData).url && (
-                <img src={(data as ImageNodeData).url} className="h-4 w-4 rounded-full object-cover" alt="" />
-              )}
-              <span className="max-w-[80px] truncate">{getNodeLabel(n!)}</span>
-              <button
-                type="button"
-                className="text-text-secondary hover:text-red-400"
-                onClick={() => removeReference(n!.id)}
+        {/* 已引用节点的缩略标签：仅这一小段允许横向滚动 */}
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto">
+          {referenceNodes.map((n) => {
+            const data = n!.data as AppNodeData;
+            const isImage = data.kind === "image";
+            return (
+              <span
+                key={n!.id}
+                className="nodrag flex shrink-0 items-center gap-1 rounded-full border border-panel-border bg-canvas px-2 py-1 text-[11px] text-text-primary"
               >
-                ×
-              </button>
-            </span>
-          );
-        })}
+                {isImage && (data as ImageNodeData).url && (
+                  <img src={(data as ImageNodeData).url} className="h-4 w-4 rounded-full object-cover" alt="" />
+                )}
+                <span className="max-w-[80px] truncate">{getNodeLabel(n!)}</span>
+                <button
+                  type="button"
+                  className="text-text-secondary hover:text-red-400"
+                  onClick={() => removeReference(n!.id)}
+                >
+                  ×
+                </button>
+              </span>
+            );
+          })}
+        </div>
 
         {/* 继续添加引用 */}
         <div className="relative shrink-0">
