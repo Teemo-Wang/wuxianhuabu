@@ -126,6 +126,8 @@ ${modelSummary}`;
     { role: "user", content: body.message },
   ];
 
+  // 注：不传 temperature。部分模型（如某些推理模型）只支持默认值，
+  // 传自定义 temperature 会被网关直接拒绝（400 unsupported_value）。
   const res = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -135,7 +137,6 @@ ${modelSummary}`;
     body: JSON.stringify({
       model: settings.modelName,
       messages,
-      temperature: 0.4,
     }),
   });
 

@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "NODE_OPTIONS=--use-system-ca tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "NODE_OPTIONS=--use-system-ca node dist/index.js"
   },
   "dependencies": {
     "cors": "2.8.6",
