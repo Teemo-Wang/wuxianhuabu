@@ -215,42 +215,64 @@ export function ModelManagerModal({ open, onClose }: Props) {
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          {/* 左侧：模型列表 */}
-          <div className="w-56 shrink-0 border-r border-panel-border p-2">
-            <div className="mb-2 flex gap-1">
+          {/* 左侧：模型列表，按类型分组，每组「+新增」按钮下方紧跟该类型下已保存的模型 */}
+          <div className="flex w-56 shrink-0 flex-col overflow-y-auto border-r border-panel-border p-2">
+            <div className="mb-3 flex flex-col gap-1">
               <button
                 type="button"
-                className="flex-1 rounded-md border border-panel-border px-2 py-1 text-xs text-text-primary hover:border-accent hover:text-accent"
+                className="w-full rounded-md border border-panel-border px-2 py-1 text-xs text-text-primary hover:border-accent hover:text-accent"
                 onClick={() => startCreate("custom-api")}
               >
                 + 自定义 API
               </button>
-            </div>
-            <button
-              type="button"
-              className="mb-2 w-full rounded-md border border-panel-border px-2 py-1 text-xs text-text-primary hover:border-accent hover:text-accent"
-              onClick={() => startCreate("comfyui")}
-            >
-              + ComfyUI 工作流
-            </button>
-            <div className="flex flex-col gap-1 overflow-y-auto">
-              {models.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className={`flex items-center justify-between rounded-md px-2 py-1.5 text-left text-xs ${
-                    editingId === m.id ? "bg-accent/10 text-accent" : "text-text-primary hover:bg-accent/5"
-                  }`}
-                  onClick={() => startEdit(m)}
-                >
-                  <span className="truncate">
-                    {m.name}
-                    <span className="ml-1 text-text-secondary">
-                      ({m.kind === "comfyui" ? "ComfyUI" : "API"} · {OUTPUT_TYPE_LABEL[m.outputType ?? "image"]})
+              {models
+                .filter((m) => m.kind === "custom-api")
+                .map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`flex items-center justify-between rounded-md px-2 py-1.5 text-left text-xs ${
+                      editingId === m.id ? "bg-accent/10 text-accent" : "text-text-primary hover:bg-accent/5"
+                    }`}
+                    onClick={() => startEdit(m)}
+                  >
+                    <span className="truncate">
+                      {m.name}
+                      <span className="ml-1 text-text-secondary">
+                        (API · {OUTPUT_TYPE_LABEL[m.outputType ?? "image"]})
+                      </span>
                     </span>
-                  </span>
-                </button>
-              ))}
+                  </button>
+                ))}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                className="w-full rounded-md border border-panel-border px-2 py-1 text-xs text-text-primary hover:border-accent hover:text-accent"
+                onClick={() => startCreate("comfyui")}
+              >
+                + ComfyUI 工作流
+              </button>
+              {models
+                .filter((m) => m.kind === "comfyui")
+                .map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`flex items-center justify-between rounded-md px-2 py-1.5 text-left text-xs ${
+                      editingId === m.id ? "bg-accent/10 text-accent" : "text-text-primary hover:bg-accent/5"
+                    }`}
+                    onClick={() => startEdit(m)}
+                  >
+                    <span className="truncate">
+                      {m.name}
+                      <span className="ml-1 text-text-secondary">
+                        (ComfyUI · {OUTPUT_TYPE_LABEL[m.outputType ?? "image"]})
+                      </span>
+                    </span>
+                  </button>
+                ))}
             </div>
           </div>
 
