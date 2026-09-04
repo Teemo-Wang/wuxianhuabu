@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useCanvasStore } from "../store/canvasStore";
 import { api } from "../api/client";
 import type { VideoNodeData } from "../types";
+import { EditableNodeName } from "./EditableNodeName";
 
 /** 视频显示区域的宽高比上下限：避免竖屏/超宽视频把节点撑得过高或过扁 */
 const MIN_RATIO = 220 / 320;
@@ -35,7 +36,12 @@ function VideoNodeComponent({ id, data, selected }: NodeProps) {
       <Handle type="source" position={Position.Right} className="!bg-accent !w-2 !h-2" />
 
       <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-text-secondary">
-        <span>{nodeData.generated ? "生成结果" : "视频"}</span>
+        <span className="shrink-0">{nodeData.generated ? "生成结果" : "视频"}</span>
+        <EditableNodeName
+          name={nodeData.name}
+          placeholder="双击命名"
+          onChange={(name) => updateNodeData(id, { name })}
+        />
       </div>
 
       {nodeData.url ? (

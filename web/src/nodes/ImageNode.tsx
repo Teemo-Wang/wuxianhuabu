@@ -7,6 +7,7 @@ import { api } from "../api/client";
 import type { ImageNodeData } from "../types";
 import { useImagePreviewStore } from "../store/imagePreviewStore";
 import { useImageEditorStore } from "../store/imageEditorStore";
+import { EditableNodeName } from "./EditableNodeName";
 
 /** 图片显示区域的宽高比上下限：避免极端长图/宽图把节点撑得过高或过扁 */
 const MIN_RATIO = 220 / 320; // 高度不超过宽度的约 1.45 倍
@@ -41,7 +42,12 @@ function ImageNodeComponent({ id, data, selected }: NodeProps) {
       <Handle type="source" position={Position.Right} className="!bg-accent !w-2 !h-2" />
 
       <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-text-secondary">
-        <span>{nodeData.generated ? "生成结果" : "图片"}</span>
+        <span className="shrink-0">{nodeData.generated ? "生成结果" : "图片"}</span>
+        <EditableNodeName
+          name={nodeData.name}
+          placeholder="双击命名"
+          onChange={(name) => updateNodeData(id, { name })}
+        />
       </div>
 
       {nodeData.url ? (

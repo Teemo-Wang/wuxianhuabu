@@ -5,9 +5,12 @@ import { useCanvasStore, type AppNode } from "./canvasStore";
 import { useModelStore } from "./modelStore";
 import type { AppNodeData, ImageNodeData, MediaOutputType, TextNodeData } from "../types";
 
-/** 生成一个节点在 @ 引用列表 / 提示词 token 中展示的简短标签 */
+/** 生成一个节点在 @ 引用列表 / 提示词 token 中展示的简短标签；
+ * 用户双击节点头部设置过自定义命名的，优先展示自定义命名 */
 export function getNodeLabel(node: AppNode): string {
   const data = node.data as AppNodeData;
+  const customName = (data as { name?: string }).name?.trim();
+  if (customName) return customName;
   if (data.kind === "text") {
     const text = (data as TextNodeData).content.trim();
     return text ? (text.length > 8 ? `${text.slice(0, 8)}…` : text) : "文本节点";

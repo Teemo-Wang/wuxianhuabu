@@ -85,6 +85,8 @@ export interface ProjectFile {
 export interface TextNodeData {
   kind: "text";
   content: string;
+  /** 素材命名：双击节点头部标签可修改，最长 MAX_NODE_NAME_LENGTH 个字符 */
+  name?: string;
   [key: string]: unknown;
 }
 
@@ -95,6 +97,8 @@ export interface ImageNodeData {
   /** 是否由生成产生（区分用户上传 vs AI 生成，便于 UI 展示角标） */
   generated?: boolean;
   sourcePrompt?: string;
+  /** 素材命名：双击节点头部标签可修改，最长 MAX_NODE_NAME_LENGTH 个字符 */
+  name?: string;
   [key: string]: unknown;
 }
 
@@ -104,6 +108,8 @@ export interface VideoNodeData {
   url: string;
   generated?: boolean;
   sourcePrompt?: string;
+  /** 素材命名：双击节点头部标签可修改，最长 MAX_NODE_NAME_LENGTH 个字符 */
+  name?: string;
   [key: string]: unknown;
 }
 
@@ -113,6 +119,8 @@ export interface AudioNodeData {
   url: string;
   generated?: boolean;
   sourcePrompt?: string;
+  /** 素材命名：双击节点头部标签可修改，最长 MAX_NODE_NAME_LENGTH 个字符 */
+  name?: string;
   [key: string]: unknown;
 }
 

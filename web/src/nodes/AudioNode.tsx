@@ -5,6 +5,7 @@ import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useCanvasStore } from "../store/canvasStore";
 import { api } from "../api/client";
 import type { AudioNodeData } from "../types";
+import { EditableNodeName } from "./EditableNodeName";
 
 function AudioNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as AudioNodeData;
@@ -30,7 +31,12 @@ function AudioNodeComponent({ id, data, selected }: NodeProps) {
       <Handle type="source" position={Position.Right} className="!bg-accent !w-2 !h-2" />
 
       <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-text-secondary">
-        <span>{nodeData.generated ? "生成结果" : "音频"}</span>
+        <span className="shrink-0">{nodeData.generated ? "生成结果" : "音频"}</span>
+        <EditableNodeName
+          name={nodeData.name}
+          placeholder="双击命名"
+          onChange={(name) => updateNodeData(id, { name })}
+        />
       </div>
 
       {nodeData.url ? (

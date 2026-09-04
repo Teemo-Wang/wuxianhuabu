@@ -3,6 +3,7 @@ import { memo, useState } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { useCanvasStore } from "../store/canvasStore";
 import type { TextNodeData } from "../types";
+import { EditableNodeName } from "./EditableNodeName";
 
 function TextNodeComponent({ id, data, selected }: NodeProps) {
   const nodeData = data as unknown as TextNodeData;
@@ -18,8 +19,13 @@ function TextNodeComponent({ id, data, selected }: NodeProps) {
       <Handle type="target" position={Position.Left} className="!bg-accent !w-2 !h-2" />
       <Handle type="source" position={Position.Right} className="!bg-accent !w-2 !h-2" />
 
-      <div className="mb-1 flex items-center gap-1 text-[11px] font-medium text-text-secondary">
-        <span>文本</span>
+      <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-text-secondary">
+        <span className="shrink-0">文本</span>
+        <EditableNodeName
+          name={nodeData.name}
+          placeholder="双击命名"
+          onChange={(name) => updateNodeData(id, { name })}
+        />
       </div>
 
       {editing ? (
